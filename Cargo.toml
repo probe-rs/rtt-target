@@ -16,5 +16,9 @@ panic-halt = { version = "0.2.0", optional = true }
 examples-cortex-m = ["cortex-m", "cortex-m-rt", "panic-halt"]
 
 [[example]]
-name = "cortex-m"
+name = "cortex-m-custom"
+required-features = ["examples-cortex-m"]
+
+[[example]]
+name = "cortex-m-print"
 required-features = ["examples-cortex-m"]
