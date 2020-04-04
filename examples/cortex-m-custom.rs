@@ -21,20 +21,30 @@ fn main() -> ! {
         }
         down: {
             0: {
-                size: 64
+                size: 512
                 name: "Input zero"
             }
         }
     };
 
-    let mut output0 = channels.up.0;
-    let mut output1 = channels.up.1;
-    let mut i = 0;
+    let mut output2 = channels.up.1;
+    writeln!(output2, "Hi! I will turn anything you type on channel 0 into upper case.").ok();
+
+    let mut output = channels.up.0;
+    let mut input = channels.down.0;
+    let mut buf = [0u8; 512];
 
     loop {
-        writeln!(output0, "Channel 0: {}", i).ok();
-        writeln!(output1, "Channel 1: {}", i).ok();
+        let count = input.read(&mut buf[..]);
+        if count > 0 {
+            for c in buf.iter_mut() {
+                c.make_ascii_uppercase();
+            }
 
-        i += 1;
+            let mut p = 0;
+            while p < count {
+                p += output.write(&buf[p..count]);
+            }
+        }
     }
 }
