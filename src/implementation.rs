@@ -3,7 +3,6 @@
 /// can be accessed from the rtt_init! macro.
 use core::cmp::min;
 use core::ptr;
-use core::sync::atomic::{AtomicPtr, Ordering};
 use vcell::VolatileCell;
 
 // Note: this is zero-initialized in the initialization macro so all zeros must be a valid value
@@ -47,11 +46,11 @@ impl RttChannel {
     pub unsafe fn init(&mut self, name: *const u8, buffer: *mut [u8]) {
         self.name = name;
         self.buffer = buffer as *mut u8;
-        self.size = unsafe { (&*buffer).len() };
+        self.size = (&*buffer).len();
     }
 
     // This method should only be called for down channels.
-    pub fn read(&self, mut buf: &mut [u8]) -> usize {
+    pub(crate) fn read(&self, mut buf: &mut [u8]) -> usize {
         let (write, mut read) = self.read_pointers();
 
         let mut total = 0;
@@ -88,7 +87,7 @@ impl RttChannel {
     }
 
     // This method should only be called for up channels.
-    pub fn write(&self, mut buf: &[u8]) -> usize {
+    pub(crate) fn write(&self, mut buf: &[u8]) -> usize {
         let (mut write, read) = self.read_pointers();
 
         let mut total = 0;
@@ -141,10 +140,10 @@ impl RttChannel {
     }
 
     /// Gets the total amount of writable space left in the buffer
-    fn writable(&self) -> usize {
+    pub(crate) fn writable(&self) -> usize {
         let (write, read) = self.read_pointers();
 
-        (self.writable_contiguous(write, read) + if read < write && read > 0 { read } else { 0 })
+        self.writable_contiguous(write, read) + if read < write && read > 0 { read } else { 0 }
     }
 
     fn read_pointers(&self) -> (usize, usize) {
