@@ -1,0 +1,6 @@
+/target
+Cargo.lock
+.cargo/config
+memory.x
+test.sh
+scratch.txt
