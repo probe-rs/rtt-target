@@ -140,11 +140,11 @@ impl RttChannel {
     }
 
     /// Gets the total amount of writable space left in the buffer
-    pub(crate) fn writable(&self) -> usize {
+    /*pub(crate) fn writable(&self) -> usize {
         let (write, read) = self.read_pointers();
 
         self.writable_contiguous(write, read) + if read < write && read > 0 { read } else { 0 }
-    }
+    }*/
 
     fn read_pointers(&self) -> (usize, usize) {
         let write = self.write.get();

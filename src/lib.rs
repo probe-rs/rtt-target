@@ -1,7 +1,10 @@
 #![no_std]
 
+use core::convert::Infallible;
 use core::fmt::{self, Write};
 use core::sync::atomic::{AtomicPtr, Ordering};
+
+use ufmt_write::uWrite;
 
 #[doc(hidden)]
 pub mod implementation;
@@ -10,6 +13,9 @@ pub mod implementation;
 mod init;
 
 /// RTT up (target to host) channel
+///
+/// Supports writing binary data directly, or writing strings via `core::fmt` macros such as
+/// `write!` as well as the ufmt crate's `uwrite!` macros.
 pub struct UpChannel(*mut implementation::RttChannel);
 
 unsafe impl Send for UpChannel {}
@@ -29,15 +35,29 @@ impl UpChannel {
     pub fn write(&mut self, buf: &[u8]) -> usize {
         self.channel().write(buf)
     }
-}
 
-impl Write for UpChannel {
-    fn write_str(&mut self, mut s: &str) -> Result<(), fmt::Error> {
+    fn write_str(&mut self, mut s: &str) {
         while s.len() > 0 {
             let count = self.channel().write(s.as_bytes());
 
             s = &s[count..];
         }
+    }
+}
+
+impl Write for UpChannel {
+    fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
+        self.write_str(s);
+
+        Ok(())
+    }
+}
+
+impl uWrite for UpChannel {
+    type Error = Infallible;
+
+    fn write_str(&mut self, s: &str) -> Result<(), Self::Error> {
+        self.write_str(s);
 
         Ok(())
     }
@@ -93,7 +113,7 @@ pub fn print_write_str(s: &str) {
 #[doc(hidden)]
 pub fn print_write_fmt(arg: fmt::Arguments) {
     if let Some(mut chan) = get_print_channel() {
-        chan.write_fmt(arg);
+        chan.write_fmt(arg).ok();
     }
 }
 

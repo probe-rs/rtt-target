@@ -5,15 +5,17 @@ authors = ["Matti Virkkunen <mvirkkunen@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+ufmt-write = "0.1.0"
 vcell = "0.1.2"
 
 # Dependencies for examples
+ufmt = { version = "0.1.0", optional = true }
 cortex-m = { version = "0.6.2", optional = true }
 cortex-m-rt = { version = "0.6.12", optional = true }
 panic-halt = { version = "0.2.0", optional = true }
 
 [features]
-examples-cortex-m = ["cortex-m", "cortex-m-rt", "panic-halt"]
+examples-cortex-m = ["cortex-m", "cortex-m-rt", "panic-halt", "ufmt"]
 
 [[example]]
 name = "cortex-m-custom"
@@ -22,3 +24,13 @@ required-features = ["examples-cortex-m"]
 [[example]]
 name = "cortex-m-print"
 required-features = ["examples-cortex-m"]
+
+[[example]]
+name = "cortex-m-ufmt"
+required-features = ["examples-cortex-m"]
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"

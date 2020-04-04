@@ -11,7 +11,7 @@ fn main() -> ! {
 
     let mut i = 0;
     loop {
-        rprintln!("Hello from rprintln! {}", i);
+        rprintln!("Hello from RTT! {}", i);
 
         i += 1;
     }
