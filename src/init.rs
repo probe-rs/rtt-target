@@ -131,12 +131,12 @@ macro_rules! rtt_init {
 
         #[no_mangle]
         #[used]
-        pub static mut SEGGER_RTT: MaybeUninit<RttControlBlock> = MaybeUninit::uninit();
+        pub static mut _SEGGER_RTT: MaybeUninit<RttControlBlock> = MaybeUninit::uninit();
 
         unsafe {
-            ptr::write_bytes(SEGGER_RTT.as_mut_ptr(), 0, 1);
+            ptr::write_bytes(_SEGGER_RTT.as_mut_ptr(), 0, 1);
 
-            let rtt = &mut *SEGGER_RTT.as_mut_ptr();
+            let rtt = &mut *_SEGGER_RTT.as_mut_ptr();
 
             rtt.header.init(rtt.up_channels.len(), rtt.down_channels.len());
 
