@@ -84,10 +84,10 @@ pub use print::*;
 /// RTT up (target to host) channel
 ///
 /// Supports writing binary data directly, or writing strings via [`core::fmt`] macros such as
-/// [`write`] as well as the ufmt crate's uwrite macros.
+/// [`write`] as well as the ufmt crate's `uwrite` macros (use the `u` method).
 ///
-/// Note that the [`Write`](core::fmt::Write) implementation diverges slightly from the trait
-/// definition in that if the channel is in blocking mode, writing will *not* block.
+/// Note that the formatted writing implementations diverge slightly from the trait definitions in
+/// that if the channel is in non-blocking mode, writing will *not* block.
 pub struct UpChannel(*mut rtt::RttChannel);
 
 unsafe impl Send for UpChannel {}
@@ -103,19 +103,25 @@ impl UpChannel {
         unsafe { &mut *self.0 }
     }
 
-    /// Writes up to `buf.len()` bytes to the channel and returns the number of bytes written.
+    /// Writes `buf` to the channel and returns the number of bytes written. Behavior when the
+    /// buffer is full is subject to the channel blocking mode.
     pub fn write(&mut self, buf: &[u8]) -> usize {
         let mut writer = self.channel().writer();
         writer.write(buf);
         writer.commit()
     }
 
-    /// Creates a writer for formatted writing with `write` or `uwrite`.
+    /// Creates a writer for formatted writing with ufmt.
     ///
     /// The correct way to use this method is to call it once for each write operation. This is so
     /// that non blocking modes will work correctly.
-    pub fn fmt_writer(&mut self) -> FormatWriter {
-        FormatWriter(self.channel().writer())
+    ///
+    /// ```
+    /// let mut output = channels.up.0;
+    /// uwriteln!(output.u(), "Hello, ufmt!");
+    /// ```
+    pub fn u(&mut self) -> uWriter {
+        uWriter(self.channel().writer())
     }
 
     /// Gets the current blocking mode of the channel. The default is `NoBlockSkip`.
@@ -128,10 +134,33 @@ impl UpChannel {
         self.channel().set_mode(mode)
     }
 
-    /// Converts the channel into a virtual terminal that can be used for formatted writing into
-    /// multiple virtual terminals.
+    /// Converts the channel into a virtual terminal that can be used for writing into multiple
+    /// virtual terminals.
     pub fn into_terminal(self) -> TerminalChannel {
         TerminalChannel::new(self)
+    }
+}
+
+impl fmt::Write for UpChannel {
+    fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
+        self.channel().writer().write_str(s)
+    }
+
+    fn write_fmt(&mut self, args: fmt::Arguments<'_>) -> Result<(), fmt::Error> {
+        self.channel().writer().write_fmt(args)
+    }
+}
+
+/// Writer for ufmt. Don't store an instance of this, but rather create a new one for every write.
+#[allow(non_camel_case_types)]
+pub struct uWriter<'c>(rtt::RttWriter<'c>);
+
+impl uWrite for uWriter<'_> {
+    type Error = Infallible;
+
+    fn write_str(&mut self, s: &str) -> Result<(), Self::Error> {
+        self.0.write(s.as_bytes());
+        Ok(())
     }
 }
 
@@ -151,7 +180,8 @@ impl DownChannel {
         unsafe { &mut *self.0 }
     }
 
-    /// Reads up to `buf.len()` bytes from the channel and return the number of bytes read.
+    /// Reads up to `buf.len()` bytes from the channel and return the number of bytes read. This
+    /// method never blocks.
     pub fn read(&mut self, buf: &mut [u8]) -> usize {
         self.channel().read(buf)
     }
@@ -173,8 +203,7 @@ pub enum ChannelMode {
     BlockIfFull = 2,
 }
 
-/// An up channel that supports formatted writes into multiple virtual terminals within the same
-/// buffer.
+/// An up channel that supports writing into multiple virtual terminals within the same buffer.
 ///
 /// An [`UpChannel`] can be turned into a `TerminalChannel` by using the
 /// [`into_terminal`](UpChannel::into_terminal()) method.
@@ -203,7 +232,7 @@ impl TerminalChannel {
     /// that non blocking modes will work correctly.
     ///
     /// The writer supports formatted writing with the standard `write` and ufmt's `uwrite`.
-    pub fn write(&mut self, number: u8) -> FormatWriter {
+    pub fn write(&mut self, number: u8) -> TerminalWriter {
         const TERMINAL_ID: [u8; 16] = *b"0123456789ABCDEF";
 
         let mut writer = self.channel.channel().writer();
@@ -218,9 +247,11 @@ impl TerminalChannel {
             };
 
             writer.write_with_mode(mode, &[0xff, TERMINAL_ID[(number & 0x0f) as usize]]);
+
+            self.current = number;
         }
 
-        FormatWriter(writer)
+        TerminalWriter { writer, number, current: &mut self.current }
     }
 
     /// Gets the current blocking mode of the channel. The default is `NoBlockSkip`.
@@ -236,20 +267,32 @@ impl TerminalChannel {
 
 /// Formatted writing operation. Don't store an instance of this, but rather create a new one for
 /// every write.
-pub struct FormatWriter<'c>(rtt::RttWriter<'c>);
+pub struct TerminalWriter<'c> {
+    writer: rtt::RttWriter<'c>,
+    number: u8,
+    current: &'c mut u8,
+}
 
-impl fmt::Write for FormatWriter<'_> {
+impl fmt::Write for TerminalWriter<'_> {
     fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
-        self.0.write(s.as_bytes());
+        self.writer.write(s.as_bytes());
         Ok(())
     }
 }
 
-impl uWrite for FormatWriter<'_> {
+impl uWrite for TerminalWriter<'_> {
     type Error = Infallible;
 
     fn write_str(&mut self, s: &str) -> Result<(), Self::Error> {
-        self.0.write(s.as_bytes());
+        self.writer.write(s.as_bytes());
         Ok(())
+    }
+}
+
+impl Drop for TerminalWriter<'_> {
+    fn drop(&mut self) {
+        if !self.writer.is_failed() {
+            *self.current = self.number;
+        }
     }
 }

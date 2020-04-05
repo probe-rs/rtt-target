@@ -34,7 +34,7 @@ fn main() -> ! {
     let mut buf = [0u8; 512];
 
     let mut output2 = channels.up.1;
-    output2.write(b"Hi! I will turn anything you type on channel 0 into upper case.\n");
+    writeln!(output2, "Hi! I will turn anything you type on channel 0 into upper case.").ok();
 
     loop {
         let count = input.read(&mut buf[..]);

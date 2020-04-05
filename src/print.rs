@@ -1,4 +1,4 @@
-use crate::{FormatWriter, TerminalChannel, UpChannel};
+use crate::{TerminalChannel, TerminalWriter, UpChannel};
 use core::fmt::{self, Write as _};
 use core::mem::MaybeUninit;
 use core::ptr;
@@ -51,7 +51,7 @@ pub fn set_print_channel(channel: UpChannel) {
 pub mod print_impl {
     use super::*;
 
-    fn with_writer<F: Fn(FormatWriter) -> ()>(number: u8, f: F) {
+    fn with_writer<F: Fn(TerminalWriter) -> ()>(number: u8, f: F) {
         let cs = CRITICAL_SECTION.load(Ordering::SeqCst);
 
         if !cs.is_null() {

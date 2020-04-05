@@ -3,6 +3,7 @@ use crate::ChannelMode;
 /// in user code, and therefore mostly undocumented. The module is only public so that it can be
 /// accessed from the rtt_init! macro.
 use core::cmp::min;
+use core::fmt;
 use core::ptr;
 use vcell::VolatileCell;
 
@@ -226,6 +227,10 @@ impl RttWriter<'_> {
         }) as usize
     }
 
+    pub fn is_failed(&self) -> bool {
+        self.state != WriteState::Finished
+    }
+
     pub fn commit(mut self) -> usize {
         self.commit_impl();
 
@@ -247,5 +252,12 @@ impl RttWriter<'_> {
 impl Drop for RttWriter<'_> {
     fn drop(&mut self) {
         self.commit_impl();
+    }
+}
+
+impl fmt::Write for RttWriter<'_> {
+    fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
+        self.write(s.as_bytes());
+        Ok(())
     }
 }

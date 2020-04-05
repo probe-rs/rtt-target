@@ -15,7 +15,7 @@ fn main() -> ! {
 
     let mut i = 0;
     loop {
-        uwriteln!(output.fmt_writer(), "Hello from RTT! {}", i).ok();
+        uwriteln!(output.u(), "Hello from RTT! {}", i).ok();
 
         i += 1;
     }
