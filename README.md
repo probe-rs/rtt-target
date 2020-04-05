@@ -1,4 +1,4 @@
-# rtt2
+# rtt-target
 
 (Temporary name - suggest a better one!)
 

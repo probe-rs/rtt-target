@@ -4,7 +4,7 @@
 use core::fmt::Write;
 use cortex_m_rt::entry;
 use panic_halt as _;
-use rtt2::rtt_init;
+use rtt_target::rtt_init;
 
 #[entry]
 fn main() -> ! {
@@ -28,7 +28,11 @@ fn main() -> ! {
     };
 
     let mut output2 = channels.up.1;
-    writeln!(output2, "Hi! I will turn anything you type on channel 0 into upper case.").ok();
+    writeln!(
+        output2,
+        "Hi! I will turn anything you type on channel 0 into upper case."
+    )
+    .ok();
 
     let mut output = channels.up.0;
     let mut input = channels.down.0;

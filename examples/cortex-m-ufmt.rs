@@ -3,7 +3,7 @@
 
 use cortex_m_rt::entry;
 use panic_halt as _;
-use rtt2::rtt_init_default;
+use rtt_target::rtt_init_default;
 use ufmt::uwriteln;
 
 #[entry]
