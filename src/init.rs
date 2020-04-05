@@ -26,7 +26,7 @@ macro_rules! rtt_init_channels {
         let mut name: *const u8 = core::ptr::null();
         $( name = concat!($name, "\0").as_bytes().as_ptr(); )?
 
-        let mut mode = $crate::ChannelMode::NoBlockTrim;
+        let mut mode = $crate::ChannelMode::NoBlockSkip;
         $( mode = $crate::ChannelMode::$mode; )?
 
         $field[$number].init(name, mode, {

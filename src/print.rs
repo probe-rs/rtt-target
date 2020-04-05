@@ -1,9 +1,11 @@
-use crate::UpChannel;
-use core::fmt::{self, Write};
+use crate::{FormatWriter, TerminalChannel, UpChannel};
+use core::fmt::{self, Write as _};
+use core::mem::MaybeUninit;
+use core::ptr;
 use core::sync::atomic::{AtomicPtr, Ordering};
 
 static CRITICAL_SECTION: AtomicPtr<CriticalSectionFunc> = AtomicPtr::new(core::ptr::null_mut());
-static PRINT_CHANNEL: AtomicPtr<crate::rtt::RttChannel> = AtomicPtr::new(core::ptr::null_mut());
+static mut PRINT_TERMINAL: MaybeUninit<TerminalChannel> = MaybeUninit::uninit();
 
 /// Type-erased critical section function used to synchronize printing.
 ///
@@ -20,8 +22,14 @@ pub type CriticalSectionFunc = fn(arg: *const (), f: fn(arg: *const ()) -> ()) -
 /// This function is unsafe because the user must guarantee that the `cs` function pointer passed in
 /// adheres to the [`CriticalSectionFunc`] specification.
 pub unsafe fn set_print_channel_cs(channel: UpChannel, cs: *const CriticalSectionFunc) {
+    (&*cs)(channel.0 as *mut (), |channel_ptr| {
+        ptr::write(
+            PRINT_TERMINAL.as_mut_ptr(),
+            TerminalChannel::new(UpChannel(channel_ptr as *mut crate::rtt::RttChannel)),
+        );
+    });
+
     CRITICAL_SECTION.store(cs as *mut _, Ordering::SeqCst);
-    PRINT_CHANNEL.store(channel.0, Ordering::SeqCst);
 }
 
 /// Sets the channel to use for [`rprint`] and [`rprintln`].
@@ -43,18 +51,20 @@ pub fn set_print_channel(channel: UpChannel) {
 pub mod print_impl {
     use super::*;
 
-    fn with_print_channel<F: Fn(&mut UpChannel) -> ()>(f: F) {
+    fn with_writer<F: Fn(FormatWriter) -> ()>(number: u8, f: F) {
         let cs = CRITICAL_SECTION.load(Ordering::SeqCst);
 
         if !cs.is_null() {
-            unsafe {
-                (&*cs)(&f as *const _ as *mut (), |f_ptr| {
-                    let chan = PRINT_CHANNEL.load(Ordering::SeqCst);
+            // If the critical section pointer has been set, PRINT_TERMINAL must also have been set.
 
-                    if !chan.is_null() {
-                        let f = &*(f_ptr as *const F);
-                        f(&mut UpChannel(chan));
-                    }
+            let args = (number, f);
+
+            unsafe {
+                (&*cs)(&args as *const _ as *mut (), |args_ptr| {
+                    let args = &*(args_ptr as *const (u8, F));
+                    let term = &mut *PRINT_TERMINAL.as_mut_ptr();
+
+                    (args.1)(term.write(args.0));
                 });
             }
         }
@@ -62,17 +72,17 @@ pub mod print_impl {
 
     /// Public due to access from macro.
     #[doc(hidden)]
-    pub fn write_str(s: &str) {
-        with_print_channel(|chan| {
-            chan.write_str(s).ok();
+    pub fn write_str(number: u8, s: &str) {
+        with_writer(number, |mut w| {
+            w.write_str(s).ok();
         });
     }
 
     /// Public due to access from macro.
     #[doc(hidden)]
-    pub fn write_fmt(arg: fmt::Arguments) {
-        with_print_channel(|chan| {
-            chan.write_fmt(arg).ok();
+    pub fn write_fmt(number: u8, arg: fmt::Arguments) {
+        with_writer(number, |mut w| {
+            w.write_fmt(arg).ok();
         });
     }
 }
@@ -81,13 +91,23 @@ pub mod print_impl {
 ///
 /// Before use the print channel has to be set with [`rtt_init_print`] or [`set_print_channel`]. If
 /// the channel isn't set, the output is ignored without error.
+///
+/// The macro also supports output to multiple virtual terminals on the channel. Use the syntax
+/// ```rprint!(=> 1, "Hello!");``` to write to terminal number 1, for example. Terminal numbers
+/// range from 0 to 15.
 #[macro_export]
 macro_rules! rprint {
     ($s:expr) => {
-        $crate::print_impl::write_str($s);
+        $crate::print_impl::write_str(0, $s);
     };
     ($($arg:tt)*) => {
-        $crate::print_impl::write_fmt(format_args!($($arg)*));
+        $crate::print_impl::write_fmt(0, format_args!($($arg)*));
+    };
+    (=> $terminal:expr, $s:expr) => {
+        $crate::print_impl::write_str($terminal, $s);
+    };
+    (=> $terminal:expr, $($arg:tt)*) => {
+        $crate::print_impl::write_fmt($terminal, format_args!($($arg)*));
     };
 }
 
@@ -95,16 +115,29 @@ macro_rules! rprint {
 ///
 /// Before use the print channel has to be set with [`rtt_init_print`] or [`set_print_channel`]. If
 /// the channel isn't set, the output is ignored without error.
+///
+/// The macro also supports output to multiple virtual terminals on the channel. Use the syntax
+/// ```rprintln!(=> 1, "Hello!");``` to write to terminal number 1, for example. Terminal numbers
+/// range from 0 to 15.
 #[macro_export]
 macro_rules! rprintln {
     () => {
-        $crate::print_impl::write_str("\n");
+        $crate::print_impl::write_str(0, "\n");
     };
     ($fmt:expr) => {
-        $crate::print_impl::write_str(concat!($fmt, "\n"));
+        $crate::print_impl::write_str(0, concat!($fmt, "\n"));
     };
     ($fmt:expr, $($arg:tt)*) => {
-        $crate::print_impl::write_fmt(format_args!(concat!($fmt, "\n"), $($arg)*));
+        $crate::print_impl::write_fmt(0, format_args!(concat!($fmt, "\n"), $($arg)*));
+    };
+    (=> $terminal:expr) => {
+        $crate::print_impl::write_str($terminal, "\n");
+    };
+    (=> $terminal:expr, $fmt:expr) => {
+        $crate::print_impl::write_str($terminal, concat!($fmt, "\n"));
+    };
+    (=> $terminal:expr, $fmt:expr, $($arg:tt)*) => {
+        $crate::print_impl::write_fmt($terminal, format_args!(concat!($fmt, "\n"), $($arg)*));
     };
 }
 

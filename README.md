@@ -19,10 +19,6 @@ Otherwise, check the documentation for the `set_print_channel_cs` function.
 
 To run the examples you will have to provide any needed platform specific configuration such as `.cargo/config` or `memory.x` yourself. Additionally you must specify a feature to enable the example dependencies, such as `--feature examples-cortex-m`.
 
-## TODO
-
-- Virtual terminal support for channel 0
-
 ## License
 
 This software is licensed under the MIT license.

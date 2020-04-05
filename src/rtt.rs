@@ -1,10 +1,10 @@
+use crate::ChannelMode;
 /// This module contains the implementation for the RTT protocol. It's not meant to be used directly
 /// in user code, and therefore mostly undocumented. The module is only public so that it can be
 /// accessed from the rtt_init! macro.
 use core::cmp::min;
 use core::ptr;
 use vcell::VolatileCell;
-use crate::ChannelMode;
 
 // Note: this is zero-initialized in the initialization macro so all zeros must be a valid value
 #[repr(C)]
@@ -104,65 +104,14 @@ impl RttChannel {
         total
     }
 
-    pub(crate) fn write(&self, mut buf: &[u8]) -> usize {
-        match self.mode() {
-            ChannelMode::NoBlockSkip => {
-                if self.writable() < buf.len() {
-                    return 0;
-                }
-
-                self.write_once(buf)
-            },
-
-            ChannelMode::NoBlockTrim => {
-                self.write_once(buf)
-            },
-
-            ChannelMode::BlockIfFull => {
-                let mut total = 0;
-
-                while buf.len() > 0 {
-                    let count = self.write_once(buf);
-                    total += count;
-                    buf = &buf[count..];
-                }
-
-                total
-            }
+    /// This method should only be called for up channels.
+    pub(crate) fn writer(&self) -> RttWriter<'_> {
+        RttWriter {
+            chan: self,
+            write: self.read_pointers().0,
+            total: 0,
+            state: WriteState::Writable,
         }
-    }
-
-    // This method should only be called for up channels.
-    fn write_once(&self, mut buf: &[u8]) -> usize {
-        let (mut write, read) = self.read_pointers();
-
-        let mut total = 0;
-
-        // Write while buffer has space for data and output contains data (maximum of two iterations)
-        while buf.len() > 0 {
-            let count = min(self.writable_contiguous(write, read), buf.len());
-            if count == 0 {
-                break;
-            }
-
-            unsafe {
-                ptr::copy_nonoverlapping(buf.as_ptr(), self.buffer.offset(write as isize), count);
-            }
-
-            total += count;
-            write += count;
-
-            if write >= self.size {
-                // Wrap around to start
-                write = 0;
-            }
-
-            buf = &buf[count..];
-        }
-
-        self.write.set(write);
-
-        total
     }
 
     /// Gets the amount of contiguous data available for reading
@@ -172,24 +121,6 @@ impl RttChannel {
         } else {
             write - read
         }) as usize
-    }
-
-    /// Gets the amount of contiguous space available for writing
-    fn writable_contiguous(&self, write: usize, read: usize) -> usize {
-        (if read > write {
-            read - write - 1
-        } else if read == 0 {
-            self.size - write - 1
-        } else {
-            self.size - write
-        }) as usize
-    }
-
-    /// Gets the total amount of writable space left in the buffer
-    fn writable(&self) -> usize {
-        let (write, read) = self.read_pointers();
-
-        self.writable_contiguous(write, read) + if read < write && read > 0 { read } else { 0 }
     }
 
     fn read_pointers(&self) -> (usize, usize) {
@@ -206,5 +137,115 @@ impl RttChannel {
         }
 
         (write, read)
+    }
+}
+
+/// A cancellable write operation to an RTT channel.
+pub(crate) struct RttWriter<'c> {
+    chan: &'c RttChannel,
+    write: usize,
+    total: usize,
+    state: WriteState,
+}
+
+#[derive(Eq, PartialEq)]
+enum WriteState {
+    /// Operation can continue
+    Writable,
+
+    /// Buffer space ran out but the written data will still be committed
+    Full,
+
+    /// The operation failed and won't be committed, or it has already been committed.
+    Finished,
+}
+
+impl RttWriter<'_> {
+    pub fn write(&mut self, buf: &[u8]) {
+        self.write_with_mode(self.chan.mode(), buf);
+    }
+
+    pub fn write_with_mode(&mut self, mode: ChannelMode, mut buf: &[u8]) {
+        while self.state == WriteState::Writable && !buf.is_empty() {
+            let count = min(self.writable_contiguous(), buf.len());
+
+            if count == 0 {
+                // Buffer is full
+
+                match mode {
+                    ChannelMode::NoBlockSkip => {
+                        // Mark the entire operation as failed if even one part cannot be written in
+                        // full.
+                        self.state = WriteState::Finished;
+                        return;
+                    }
+
+                    ChannelMode::NoBlockTrim => {
+                        // If the buffer is full, write as much as possible (note: no return), and
+                        // mark the operation as full, which prevents further writes.
+                        self.state = WriteState::Full;
+                    }
+
+                    ChannelMode::BlockIfFull => {
+                        // Spin until buffer is not full!
+                        continue;
+                    }
+                }
+            }
+
+            unsafe {
+                ptr::copy_nonoverlapping(
+                    buf.as_ptr(),
+                    self.chan.buffer.offset(self.write as isize),
+                    count,
+                );
+            }
+
+            self.write += count;
+            self.total += count;
+
+            if self.write >= self.chan.size {
+                // Wrap around to start
+                self.write = 0;
+            }
+
+            buf = &buf[count..];
+        }
+    }
+
+    /// Gets the amount of contiguous space available for writing
+    fn writable_contiguous(&self) -> usize {
+        let read = self.chan.read_pointers().1;
+
+        (if read > self.write {
+            read - self.write - 1
+        } else if read == 0 {
+            self.chan.size - self.write - 1
+        } else {
+            self.chan.size - self.write
+        }) as usize
+    }
+
+    pub fn commit(mut self) -> usize {
+        self.commit_impl();
+
+        self.total
+    }
+
+    fn commit_impl(&mut self) {
+        match self.state {
+            WriteState::Finished => return,
+            WriteState::Full | WriteState::Writable => {
+                // Commit the write pointer so the host can see the new data
+                self.chan.write.set(self.write);
+                self.state = WriteState::Finished;
+            }
+        }
+    }
+}
+
+impl Drop for RttWriter<'_> {
+    fn drop(&mut self) {
+        self.commit_impl();
     }
 }

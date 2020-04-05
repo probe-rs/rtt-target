@@ -8,12 +8,14 @@ use ufmt::uwriteln;
 
 #[entry]
 fn main() -> ! {
-    let mut channels = rtt_init_default!();
-    channels.up.0.set_mode(ChannelMode::BlockIfFull);
+    let channels = rtt_init_default!();
+
+    let mut output = channels.up.0;
+    output.set_mode(ChannelMode::BlockIfFull);
 
     let mut i = 0;
     loop {
-        uwriteln!(channels.up.0, "Hello from RTT! {}", i).ok();
+        uwriteln!(output.fmt_writer(), "Hello from RTT! {}", i).ok();
 
         i += 1;
     }
