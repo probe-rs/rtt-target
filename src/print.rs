@@ -11,7 +11,7 @@ static mut PRINT_TERMINAL: MaybeUninit<TerminalChannel> = MaybeUninit::uninit();
 ///
 /// When called, the function must establish a critical section and call `f` within it, passing
 /// `arg` as the argument.
-pub type CriticalSectionFunc = fn(arg: *const (), f: fn(arg: *const ()) -> ()) -> ();
+pub type CriticalSectionFunc = fn(arg: *mut (), f: fn(arg: *mut ()) -> ()) -> ();
 
 /// Sets the channel to use for [`rprint`] and [`rprintln`] and the critical section function used
 /// to synchronize printing. You should only use this function if the [`set_print_channel`] function
