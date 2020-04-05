@@ -1,8 +1,13 @@
 [package]
-name = "rtt2"
+name = "rtt-target"
+description = "Target side implementation of the RTT (Real-Time Transfer) I/O protocol"
 version = "0.1.0"
-authors = ["Matti Virkkunen <mvirkkunen@gmail.com>"]
 edition = "2018"
+readme = "README.md"
+keywords = ["no-std", "embedded", "debugging", "rtt"]
+license = "MIT"
+authors = ["Matti Virkkunen <mvirkkunen@gmail.com>"]
+repository = "https://github.com/mvirkkunen/rtt-target"
 
 [dependencies]
 ufmt-write = "0.1.0"
