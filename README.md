@@ -8,9 +8,9 @@ While this crate is platform agnostic, some platform specific code is needed if 
 
 If using Cortex-M, there is built-in support with a feature flag:
 
-```
-    # Cargo.toml
-    rtt-target = { version = "x.y.z", features = ["cortex-m"] }
+```toml
+# Cargo.toml
+rtt-target = { version = "x.y.z", features = ["cortex-m"] }
 ```
 
 Otherwise, check the documentation for the `set_print_channel_cs` function.
