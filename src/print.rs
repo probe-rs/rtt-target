@@ -47,10 +47,10 @@ pub mod print_impl {
         let cs = CRITICAL_SECTION.load(Ordering::SeqCst);
 
         if !cs.is_null() {
-            // If the channel is set, the critical section function also must be set
             unsafe {
                 (&*cs)(&f as *const _ as *mut (), |f_ptr| {
                     let chan = PRINT_CHANNEL.load(Ordering::SeqCst);
+
                     if !chan.is_null() {
                         let f = &*(f_ptr as *const F);
                         f(&mut UpChannel(chan));
@@ -63,7 +63,9 @@ pub mod print_impl {
     /// Public due to access from macro.
     #[doc(hidden)]
     pub fn write_str(s: &str) {
-        with_print_channel(|chan| chan.write_str(s));
+        with_print_channel(|chan| {
+            chan.write_str(s).ok();
+        });
     }
 
     /// Public due to access from macro.
@@ -109,19 +111,20 @@ macro_rules! rprintln {
 /// Initializes RTT with a single up channel and sets it as the print channel for the printing
 /// macros.
 ///
-/// The optional argument specifies the size of the buffer in bytes. The default is 1024 bytes. See
-/// [`rtt_init`] for more details.
+/// The optional arguments specify the blocking mode (default: `NoBlockTrim`) and size of the buffer
+/// in bytes (default: 1024). See [`rtt_init`] for more details.
 ///
 /// This macro is defined only if the [`set_print_channel`] function is available, i.e. if you have
 /// enabled a platform support feature.
 #[cfg(any(feature = "cortex-m"))]
 #[macro_export]
 macro_rules! rtt_init_print {
-    ($buffer_size:literal) => {
+    ($mode:ident, $size:literal) => {
         let channels = $crate::rtt_init! {
             up: {
                 0: {
-                    size: $buffer_size
+                    size: $size
+                    mode: $mode
                     name: "Terminal"
                 }
             }
@@ -130,7 +133,11 @@ macro_rules! rtt_init_print {
         $crate::set_print_channel(channels.up.0);
     };
 
+    ($mode:ident) => {
+        $crate::rtt_init_print!($mode, 1024);
+    };
+
     () => {
-        $crate::rtt_init_print!(1024);
+        $crate::rtt_init_print!(NoBlockTrim, 1024);
     };
 }

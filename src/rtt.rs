@@ -4,6 +4,7 @@
 use core::cmp::min;
 use core::ptr;
 use vcell::VolatileCell;
+use crate::ChannelMode;
 
 // Note: this is zero-initialized in the initialization macro so all zeros must be a valid value
 #[repr(C)]
@@ -45,10 +46,25 @@ pub struct RttChannel {
 }
 
 impl RttChannel {
-    pub unsafe fn init(&mut self, name: *const u8, buffer: *mut [u8]) {
+    pub unsafe fn init(&mut self, name: *const u8, mode: ChannelMode, buffer: *mut [u8]) {
         self.name = name;
         self.buffer = buffer as *mut u8;
         self.size = (&*buffer).len();
+        self.set_mode(mode);
+    }
+
+    pub(crate) fn mode(&self) -> ChannelMode {
+        let mode = self.flags.get() & 3;
+
+        if mode <= 2 {
+            unsafe { core::mem::transmute(mode) }
+        } else {
+            ChannelMode::NoBlockSkip
+        }
+    }
+
+    pub(crate) fn set_mode(&self, mode: ChannelMode) {
+        self.flags.set((self.flags.get() & !3) | mode as usize);
     }
 
     // This method should only be called for down channels.
@@ -88,8 +104,36 @@ impl RttChannel {
         total
     }
 
-    // This method should only be called for up channels.
     pub(crate) fn write(&self, mut buf: &[u8]) -> usize {
+        match self.mode() {
+            ChannelMode::NoBlockSkip => {
+                if self.writable() < buf.len() {
+                    return 0;
+                }
+
+                self.write_once(buf)
+            },
+
+            ChannelMode::NoBlockTrim => {
+                self.write_once(buf)
+            },
+
+            ChannelMode::BlockIfFull => {
+                let mut total = 0;
+
+                while buf.len() > 0 {
+                    let count = self.write_once(buf);
+                    total += count;
+                    buf = &buf[count..];
+                }
+
+                total
+            }
+        }
+    }
+
+    // This method should only be called for up channels.
+    fn write_once(&self, mut buf: &[u8]) -> usize {
         let (mut write, read) = self.read_pointers();
 
         let mut total = 0;
@@ -142,11 +186,11 @@ impl RttChannel {
     }
 
     /// Gets the total amount of writable space left in the buffer
-    /*pub(crate) fn writable(&self) -> usize {
+    fn writable(&self) -> usize {
         let (write, read) = self.read_pointers();
 
         self.writable_contiguous(write, read) + if read < write && read > 0 { read } else { 0 }
-    }*/
+    }
 
     fn read_pointers(&self) -> (usize, usize) {
         let write = self.write.get();

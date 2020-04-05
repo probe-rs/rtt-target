@@ -21,9 +21,18 @@
 //! macros for more details.
 //!
 //! The initialization macros return channel objects that can be used for writing and reading.
-//! Different channel objects can be safely used concurrently in different contexts without locking.
+//! Different channel objects can safely be used concurrently in different contexts without locking.
 //! In an interrupt-based application with realtime constraints you could use a separate channel for
-//! every interrupt context to allow for minimal delays.
+//! every interrupt context to allow for lock-free logging.
+//!
+//! # Channel modes
+//!
+//! By default, channels start in [`NoBlockSkip`](ChannelMode::NoBlockSkip) mode, which discards
+//! data if the buffer is full. This enables RTT to not crash the application if there is no debug
+//! probe attached or if the host is not reading the buffers. However if the application outputs
+//! faster than the host can read (which is easy to do, because writing is very fast), messages will
+//! be lost. Channels can be set to blocking mode if this is desirable, however in that case the
+//! application will likely freeze eventually if the debugger is not attached.
 //!
 //! # Printing
 //!
@@ -43,8 +52,8 @@
 //! }
 //! ```
 //!
-//! Please note that because qcritical section is used, using printing with a blocking channel will
-//! cause the application to freeze completely when the buffer is full.
+//! Please note that because a critical section is used, printing into a blocking channel will cause
+//! the application to block and freeze when the buffer is full.
 
 #![no_std]
 
@@ -68,6 +77,9 @@ pub use print::*;
 ///
 /// Supports writing binary data directly, or writing strings via [`core::fmt`] macros such as
 /// [`write`] as well as the ufmt crate's uwrite macros.
+///
+/// Note that the [`Write`](core::fmt::Write) implementation diverges slightly from the trait
+/// definition in that if the channel is in blocking mode, writing will *not* block.
 pub struct UpChannel(*mut rtt::RttChannel);
 
 unsafe impl Send for UpChannel {}
@@ -79,7 +91,7 @@ impl UpChannel {
         UpChannel(channel)
     }
 
-    fn channel(&mut self) -> &mut rtt::RttChannel {
+    fn channel(&self) -> &mut rtt::RttChannel {
         unsafe { &mut *self.0 }
     }
 
@@ -88,18 +100,20 @@ impl UpChannel {
         self.channel().write(buf)
     }
 
-    fn write_str(&mut self, mut s: &str) {
-        while s.len() > 0 {
-            let count = self.channel().write(s.as_bytes());
+    /// Gets the current blocking mode of the channel. The default is `NoBlockSkip`.
+    pub fn mode(&self) -> ChannelMode {
+        self.channel().mode()
+    }
 
-            s = &s[count..];
-        }
+    /// Sets the blocking mode of the channel
+    pub fn set_mode(&mut self, mode: ChannelMode) {
+        self.channel().set_mode(mode)
     }
 }
 
 impl fmt::Write for UpChannel {
     fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
-        self.write_str(s);
+        self.write(s.as_bytes());
 
         Ok(())
     }
@@ -109,7 +123,7 @@ impl uWrite for UpChannel {
     type Error = Infallible;
 
     fn write_str(&mut self, s: &str) -> Result<(), Self::Error> {
-        self.write_str(s);
+        self.write(s.as_bytes());
 
         Ok(())
     }
@@ -135,4 +149,23 @@ impl DownChannel {
     pub fn read(&mut self, buf: &mut [u8]) -> usize {
         self.channel().read(buf)
     }
+}
+
+/// Specifies what to do when a channel is written to and its buffer is full.
+#[repr(usize)]
+pub enum ChannelMode {
+    /// Skip writing the buffer if it doesn't fit in its entirety.
+    ///
+    /// Note that when using formatted printing such as [`rprintln`], the data is written in
+    /// multiple separate writes of varying length. Therefore if the buffer is almost full this mode
+    /// can result in something in the *start or middle* of a format string being skipped.
+    NoBlockSkip = 0,
+
+    /// Write as much as possible of the buffer and ignore the rest.
+    NoBlockTrim = 1,
+
+    /// Block (spin) if the buffer is full. If within a critical section such as inside
+    /// [`rprintln`], this will cause the application to freeze until the host reads from the
+    /// buffer.
+    BlockIfFull = 2,
 }

@@ -12,16 +12,18 @@ fn main() -> ! {
         up: {
             0: {
                 size: 512
+                mode: BlockIfFull
                 name: "Output zero"
             }
             1: {
-                size: 512
+                size: 128
                 name: "Output one"
             }
         }
         down: {
             0: {
                 size: 512
+                mode: BlockIfFull
                 name: "Input zero"
             }
         }

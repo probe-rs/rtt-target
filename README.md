@@ -15,7 +15,6 @@ example dependencies, such as `--feature examples-cortex-m`.
 ## TODO
 
 - Virtual terminal support for channel 0
-- Non-blocking writes
 
 ## License
 
