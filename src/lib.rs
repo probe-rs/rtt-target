@@ -1,8 +1,9 @@
 //! Target side implementation of the RTT (Real-Time Transfer) I/O protocol
 //!
 //! RTT implements input and output to/from a debug probe using in-memory ring buffers and memory
-//! polling. This enables debug logging from the microcontroller with minimal delays, making it
-//! suitable for even real-time applications where e.g. semihosting delays would break things.
+//! polling. This enables debug logging from the microcontroller with minimal delays and no
+//! blocking, making it usable even in real-time applications where e.g. semihosting delays cannot
+//! be tolerated.
 //!
 //! # Hardware support
 //!
