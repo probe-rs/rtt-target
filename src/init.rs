@@ -62,10 +62,7 @@ macro_rules! rtt_init_wrappers {
 /// Initializes RTT with the specified channels. Channel numbers, buffer sizes and names can be
 /// defined.
 ///
-/// The channel numbers must start from 0 and not skip any numbers, or otherwise odd things will
-/// happen. The order does not matter. This macro should be called once within a function,
-/// preferably close to the start of your entry point. The macro must only be called once - if it's
-/// called twice in the same program a duplicate symbol error will occur.
+/// The syntax looks as follows (note that commas are not allowed anywhere):
 ///
 /// ```
 /// let channels = rtt_init! {
@@ -86,6 +83,11 @@ macro_rules! rtt_init_wrappers {
 ///     }
 /// };
 /// ```
+///
+/// The channel numbers must start from 0 and not skip any numbers, or otherwise odd things will
+/// happen. The order does not matter. This macro should be called once within a function,
+/// preferably close to the start of your entry point. The macro must only be called once - if it's
+/// called twice in the same program a duplicate symbol error will occur.
 ///
 /// At compile time the macro will reserve space for the RTT control block as well as all the
 /// buffers as uninitialized static variables. At runtime the macro fills in the structures and
@@ -120,7 +122,7 @@ macro_rules! rtt_init {
         use core::ptr;
         use $crate::UpChannel;
         use $crate::DownChannel;
-        use $crate::implementation::*;
+        use $crate::rtt::*;
 
         #[repr(C)]
         pub struct RttControlBlock {
@@ -178,7 +180,7 @@ macro_rules! rtt_init {
 /// };
 /// ```
 ///
-/// See [rtt_init](rtt_init) for more details.
+/// See [`rtt_init`] for more details.
 #[macro_export]
 macro_rules! rtt_init_default {
     () => {
@@ -196,29 +198,5 @@ macro_rules! rtt_init_default {
                 }
             }
         };
-    };
-}
-
-/// Initializes RTT with a single up channel and sets it as the print channel for [rprintln]. The
-/// optional argument specifies the size of the buffer in bytes. The default is 1024 bytes.
-///
-/// See [rtt_init](rtt_init) for more details.
-#[macro_export]
-macro_rules! rtt_init_print {
-    ($buffer_size:literal) => {
-        let channels = $crate::rtt_init! {
-            up: {
-                0: {
-                    size: $buffer_size
-                    name: "Terminal"
-                }
-            }
-        };
-
-        $crate::set_print_channel(channels.up.0);
-    };
-
-    () => {
-        $crate::rtt_init_print!(1024);
     };
 }

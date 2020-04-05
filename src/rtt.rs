@@ -1,6 +1,6 @@
-/// This module contains the core implementation for the RTT protocol. It's not meant to be used
-/// directly in user code, and therefore mostly undocumented. The module is only public so that it
-/// can be accessed from the rtt_init! macro.
+/// This module contains the implementation for the RTT protocol. It's not meant to be used directly
+/// in user code, and therefore mostly undocumented. The module is only public so that it can be
+/// accessed from the rtt_init! macro.
 use core::cmp::min;
 use core::ptr;
 use vcell::VolatileCell;
@@ -18,6 +18,8 @@ pub struct RttHeader {
 
 impl RttHeader {
     pub unsafe fn init(&mut self, max_up_channels: usize, max_down_channels: usize) {
+        // Copy the ID in two parts to avoid having the ID string in memory in full
+
         ptr::copy_nonoverlapping(b"SEGGER R_" as *const u8, self.id.as_mut_ptr(), 9);
 
         ptr::copy_nonoverlapping(

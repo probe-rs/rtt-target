@@ -15,8 +15,6 @@ example dependencies, such as `--feature examples-cortex-m`.
 ## TODO
 
 - Virtual terminal support for channel 0
-- Locking (will require platform-specific bits) - there is currently no locking and concurrent
-  writes to a channel will corrupt it, however this does not break memory safety.
 - Non-blocking writes
 
 ## License
