@@ -30,8 +30,8 @@ macro_rules! rtt_init_channels {
         $( mode = $crate::ChannelMode::$mode; )?
 
         $field[$number].init(name, mode, {
-            static mut RTT_CHANNEL_BUFFER: MaybeUninit<[u8; $size]> = MaybeUninit::uninit();
-            RTT_CHANNEL_BUFFER.as_mut_ptr()
+            static mut _RTT_CHANNEL_BUFFER: MaybeUninit<[u8; $size]> = MaybeUninit::uninit();
+            _RTT_CHANNEL_BUFFER.as_mut_ptr()
         });
 
         $crate::rtt_init_channels!($field; $($tail)*);
@@ -131,19 +131,20 @@ macro_rules! rtt_init {
             down_channels: [RttChannel; $crate::rtt_init_repeat!({ 1 + } { 0 }; $($($down)*)?)],
         }
 
-        #[no_mangle]
         #[used]
-        pub static mut _SEGGER_RTT: MaybeUninit<RttControlBlock> = MaybeUninit::uninit();
+        #[no_mangle]
+        #[export_name = "_SEGGER_RTT"]
+        pub static mut CONTROL_BLOCK: MaybeUninit<RttControlBlock> = MaybeUninit::uninit();
 
         unsafe {
-            ptr::write_bytes(_SEGGER_RTT.as_mut_ptr(), 0, 1);
+            ptr::write_bytes(CONTROL_BLOCK.as_mut_ptr(), 0, 1);
 
-            let rtt = &mut *_SEGGER_RTT.as_mut_ptr();
+            let cb = &mut *CONTROL_BLOCK.as_mut_ptr();
 
-            rtt.header.init(rtt.up_channels.len(), rtt.down_channels.len());
+            cb.header.init(cb.up_channels.len(), cb.down_channels.len());
 
-            $( $crate::rtt_init_channels!(rtt.up_channels; $($up)*); )?
-            $( $crate::rtt_init_channels!(rtt.down_channels; $($down)*); )?
+            $( $crate::rtt_init_channels!(cb.up_channels; $($up)*); )?
+            $( $crate::rtt_init_channels!(cb.down_channels; $($down)*); )?
 
             pub struct Channels {
                 $( up: $crate::rtt_init_repeat!({ UpChannel, } {}; $($up)*), )?
@@ -151,8 +152,8 @@ macro_rules! rtt_init {
             }
 
             Channels {
-                $( up: $crate::rtt_init_wrappers!(rtt.up_channels; UpChannel::new; {}; $($up)*), )?
-                $( down: $crate::rtt_init_wrappers!(rtt.down_channels; DownChannel::new; {}; $($down)*), )?
+                $( up: $crate::rtt_init_wrappers!(cb.up_channels; UpChannel::new; {}; $($up)*), )?
+                $( down: $crate::rtt_init_wrappers!(cb.down_channels; DownChannel::new; {}; $($down)*), )?
             }
         }
     }};

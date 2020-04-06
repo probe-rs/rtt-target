@@ -22,12 +22,12 @@ impl RttHeader {
     pub unsafe fn init(&mut self, max_up_channels: usize, max_down_channels: usize) {
         // Copy the ID in two parts to avoid having the ID string in memory in full
 
-        ptr::copy_nonoverlapping(b"SEGGER R_" as *const u8, self.id.as_mut_ptr(), 9);
+        ptr::copy_nonoverlapping(b"SEGG_" as *const u8, self.id.as_mut_ptr(), 5);
 
         ptr::copy_nonoverlapping(
-            b"TT\0\0\0\0\0\0" as *const u8,
-            self.id.as_mut_ptr().offset(8),
-            8,
+            b"ER RTT\0\0\0\0\0\0" as *const u8,
+            self.id.as_mut_ptr().offset(4),
+            12,
         );
 
         self.max_up_channels.set(max_up_channels);
