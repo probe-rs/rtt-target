@@ -15,12 +15,20 @@ rtt-target = { version = "x.y.z", features = ["cortex-m"] }
 
 Otherwise, check the documentation for the `set_print_channel_cs` function.
 
+## Usage
+
+With a platform support feature, printing is as simple as:
+
+```rust
+use rtt_target::{rtt_init_print, rprintln};
+fn main() -> ! {
+    rtt_init_print!();
+    loop {
+        rprintln!("Hello, world!");
+    }
+}
+```
+
 ## Running the examples
 
 To run the examples you will have to provide any needed platform specific configuration such as `.cargo/config` or `memory.x` yourself. Additionally you must specify a feature to enable the example dependencies, such as `--feature examples-cortex-m`.
-
-## License
-
-This software is licensed under the MIT license.
-
-The SEGGER RTT protocol is used for compatibility with existing software, however this project is not affiliated with nor uses any code belonging to SEGGER Microcontroller GmbH.

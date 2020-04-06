@@ -17,6 +17,32 @@ pub type CriticalSectionFunc = fn(arg: *mut (), f: fn(arg: *mut ()) -> ()) -> ()
 /// to synchronize printing. You should only use this function if the [`set_print_channel`] function
 /// isn't available on your platform.
 ///
+/// # Example
+///
+/// Because the function takes a *pointer to a function pointer* as an argument, the syntax to call
+/// it is slightly convoluted. In this example, `interrupt::free` is a function that establishes a
+/// critical section and calls the supplied function.
+///
+/// ```
+/// use rtt_target::{rtt_init_detault, rprintln};
+/// use platform_specific::interrupt;
+///
+/// fn main() -> ! {
+///     let channels = rtt_init_detault!();
+///
+///     unsafe {
+///         rtt_target::set_print_channel_cs(
+///             channels.up.0,
+///             &((|arg, f| interrupt::free(|_| f(arg))) as rtt_target::CriticalSectionFunc) as *const _,
+///         )
+///     }
+///
+///     loop {
+///         rprintln!("Hello, world!");
+///     }
+/// }
+/// ```
+///
 /// # Safety
 ///
 /// This function is unsafe because the user must guarantee that the `cs` function pointer passed in
@@ -41,7 +67,7 @@ pub fn set_print_channel(channel: UpChannel) {
     unsafe {
         set_print_channel_cs(
             channel,
-            &((|a, f| cortex_m::interrupt::free(|_| f(a))) as CriticalSectionFunc) as *const _,
+            &((|arg, f| cortex_m::interrupt::free(|_| f(arg))) as CriticalSectionFunc) as *const _,
         );
     }
 }
