@@ -1,7 +1,8 @@
+//! This module contains the implementation for the RTT protocol. It's not meant to be used directly
+//! in user code, and therefore mostly undocumented. The module is only public so that it can be
+//! accessed from the rtt_init! macro.
+
 use crate::ChannelMode;
-/// This module contains the implementation for the RTT protocol. It's not meant to be used directly
-/// in user code, and therefore mostly undocumented. The module is only public so that it can be
-/// accessed from the rtt_init! macro.
 use core::cmp::min;
 use core::fmt;
 use core::ptr;
@@ -11,8 +12,8 @@ use vcell::VolatileCell;
 #[repr(C)]
 pub struct RttHeader {
     id: [u8; 16],
-    max_up_channels: VolatileCell<usize>,
-    max_down_channels: VolatileCell<usize>,
+    max_up_channels: usize,
+    max_down_channels: usize,
     // Followed in memory by:
     // up_channels: [Channel; max_up_channels]
     // down_channels: [Channel; down_up_channels]
@@ -20,6 +21,9 @@ pub struct RttHeader {
 
 impl RttHeader {
     pub unsafe fn init(&mut self, max_up_channels: usize, max_down_channels: usize) {
+        ptr::write_volatile(&mut self.max_up_channels, max_up_channels);
+        ptr::write_volatile(&mut self.max_down_channels, max_down_channels);
+
         // Copy the ID in two parts to avoid having the ID string in memory in full
 
         ptr::copy_nonoverlapping(b"SEGG_" as *const u8, self.id.as_mut_ptr(), 5);
@@ -29,9 +33,6 @@ impl RttHeader {
             self.id.as_mut_ptr().offset(4),
             12,
         );
-
-        self.max_up_channels.set(max_up_channels);
-        self.max_down_channels.set(max_down_channels);
     }
 }
 
@@ -48,10 +49,12 @@ pub struct RttChannel {
 
 impl RttChannel {
     pub unsafe fn init(&mut self, name: *const u8, mode: ChannelMode, buffer: *mut [u8]) {
-        self.name = name;
-        self.buffer = buffer as *mut u8;
-        self.size = (&*buffer).len();
+        ptr::write_volatile(&mut self.name, name);
+        ptr::write_volatile(&mut self.size, (&*buffer).len());
         self.set_mode(mode);
+
+        // Set buffer last as it can be used to detect if the channel has been initialized
+        ptr::write_volatile(&mut self.buffer, buffer as *mut u8);
     }
 
     pub(crate) fn mode(&self) -> ChannelMode {
