@@ -1,0 +1,19 @@
+[package]
+name = "panic-rtt"
+description = "Logs panic messages over RTT using rtt-target"
+version = "0.1.0"
+edition = "2018"
+readme = "README.md"
+keywords = ["no-std", "embedded", "debugging", "rtt"]
+license = "MIT"
+authors = ["Matti Virkkunen <mvirkkunen@gmail.com>"]
+repository = "https://github.com/mvirkkunen/rtt-target"
+
+[dependencies]
+rtt-target = "0.1.1"
+
+# Platform specific stuff
+cortex-m = { version = "0.6.2", optional = true }
+
+[package.metadata.docs.rs]
+features = ["cortex-m"]

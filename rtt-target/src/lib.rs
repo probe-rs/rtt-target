@@ -67,6 +67,7 @@
 
 use core::convert::Infallible;
 use core::fmt;
+use core::mem::MaybeUninit;
 use ufmt_write::uWrite;
 
 #[macro_use]
@@ -138,6 +139,37 @@ impl UpChannel {
     /// virtual terminals.
     pub fn into_terminal(self) -> TerminalChannel {
         TerminalChannel::new(self)
+    }
+
+    /// Magically creates a channel out of thin air. Return `None` if the channel number is too
+    /// high, or if the channel has not been initialized.
+    ///
+    /// Calling this function will cause a linking error if `rtt_init` has not been called.
+    ///
+    /// # Safety
+    ///
+    /// It's undefined behavior for something else to access the channel through anything else
+    /// besides the returned object during or after calling this function. Essentially this function
+    /// is only safe to use in panic handlers and the like that permanently disable interrupts.
+    pub unsafe fn conjure(number: usize) -> Option<UpChannel> {
+        extern "C" {
+            #[no_mangle]
+            #[link_name = "_SEGGER_RTT"]
+            static mut CONTROL_BLOCK: MaybeUninit<rtt::RttHeader>;
+        }
+
+        if number >= (&*CONTROL_BLOCK.as_ptr()).max_up_channels() {
+            return None;
+        }
+
+        // First offset moves past the header, second offset finds the channel struct
+        let ptr = (CONTROL_BLOCK.as_ptr().offset(1) as *mut rtt::RttChannel).offset(number as isize);
+
+        if !(&*ptr).is_initialized() {
+            return None;
+        }
+
+        Some(UpChannel(ptr))
     }
 }
 
@@ -251,7 +283,11 @@ impl TerminalChannel {
             self.current = number;
         }
 
-        TerminalWriter { writer, number, current: &mut self.current }
+        TerminalWriter {
+            writer,
+            number,
+            current: &mut self.current,
+        }
     }
 
     /// Gets the current blocking mode of the channel. The default is `NoBlockSkip`.

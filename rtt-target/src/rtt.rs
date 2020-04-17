@@ -34,6 +34,10 @@ impl RttHeader {
             12,
         );
     }
+
+    pub fn max_up_channels(&self) -> usize {
+        self.max_up_channels
+    }
 }
 
 // Note: this is zero-initialized in the initialization macro so all zeros must be a valid value
@@ -55,6 +59,10 @@ impl RttChannel {
 
         // Set buffer last as it can be used to detect if the channel has been initialized
         ptr::write_volatile(&mut self.buffer, buffer as *mut u8);
+    }
+
+    pub fn is_initialized(&self) -> bool {
+        self.buffer != ptr::null_mut()
     }
 
     pub(crate) fn mode(&self) -> ChannelMode {

@@ -1,0 +1,10 @@
+[package]
+name = "panic-test"
+version = "0.1.0"
+authors = ["Matti Virkkunen <mvirkkunen@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+cortex-m-rt = "0.6.12"
+panic-rtt = { version = "0.1.0", features = ["cortex-m"] }
+rtt-target = "0.1.1"

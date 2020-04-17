@@ -2,4 +2,10 @@
 
 members = [
     "rtt-target",
+    "panic-rtt",
+    "panic-test",
 ]
+
+[patch.crates-io]
+rtt-target = { path = "./rtt-target" }
+panic-rtt = { path = "./panic-rtt" }
