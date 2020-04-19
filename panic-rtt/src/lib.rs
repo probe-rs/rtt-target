@@ -34,15 +34,24 @@
 
 #![no_std]
 
-use core::fmt::Write;
-use core::panic::PanicInfo;
+// allow(unused) is used so that warnings when no platform feature is defined don't drown out the
+// compile_error
+
+#[allow(unused)]
+use core::{
+    sync::atomic::{compiler_fence, Ordering::SeqCst},
+    fmt::Write,
+    panic::PanicInfo,
+};
+
+#[allow(unused)]
 use rtt_target::{ChannelMode, UpChannel};
 
 #[cfg(feature = "cortex-m")]
 #[inline(never)]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    use cortex_m::{asm, interrupt};
+    use cortex_m::interrupt;
 
     interrupt::disable();
 
@@ -53,7 +62,7 @@ fn panic(info: &PanicInfo) -> ! {
     }
 
     loop {
-        asm::bkpt();
+        compiler_fence(SeqCst);
     }
 }
 
