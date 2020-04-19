@@ -20,11 +20,17 @@ pub struct RttHeader {
 }
 
 impl RttHeader {
+    /// Initializes the control block header.
+    ///
+    /// # Safety
+    ///
+    /// The arguments must correspond to the sizes of the arrays that follow the header in memory.
     pub unsafe fn init(&mut self, max_up_channels: usize, max_down_channels: usize) {
         ptr::write_volatile(&mut self.max_up_channels, max_up_channels);
         ptr::write_volatile(&mut self.max_down_channels, max_down_channels);
 
-        // Copy the ID in two parts to avoid having the ID string in memory in full
+        // Copy the ID in two parts to avoid having the ID string in memory in full. The ID is
+        // copied last to make it less likely an unfinished control block is detected by the host.
 
         ptr::copy_nonoverlapping(b"SEGG_" as *const u8, self.id.as_mut_ptr(), 5);
 
@@ -52,6 +58,11 @@ pub struct RttChannel {
 }
 
 impl RttChannel {
+    /// Initializes the channel.
+    ///
+    /// # Safety
+    ///
+    /// The pointer arguments must point to a valid null-terminated name and writable buffer.
     pub unsafe fn init(&mut self, name: *const u8, mode: ChannelMode, buffer: *mut [u8]) {
         ptr::write_volatile(&mut self.name, name);
         ptr::write_volatile(&mut self.size, (&*buffer).len());

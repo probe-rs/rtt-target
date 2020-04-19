@@ -141,10 +141,13 @@ macro_rules! rtt_init {
 
             let cb = &mut *CONTROL_BLOCK.as_mut_ptr();
 
-            cb.header.init(cb.up_channels.len(), cb.down_channels.len());
-
             $( $crate::rtt_init_channels!(cb.up_channels; $($up)*); )?
             $( $crate::rtt_init_channels!(cb.down_channels; $($down)*); )?
+
+            // The header is initialized last to make it less likely an unfinished control block is
+            // detected by the host.
+
+            cb.header.init(cb.up_channels.len(), cb.down_channels.len());
 
             pub struct Channels {
                 $( up: $crate::rtt_init_repeat!({ UpChannel, } {}; $($up)*), )?
