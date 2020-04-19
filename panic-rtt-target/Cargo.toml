@@ -1,5 +1,5 @@
 [package]
-name = "panic-rtt"
+name = "panic-rtt-target"
 description = "Logs panic messages over RTT using rtt-target"
 version = "0.1.0"
 edition = "2018"

@@ -2,7 +2,7 @@
 
 #![no_std]
 
-use panic_rtt as _;
+use panic_rtt_target as _;
 use rtt_target::rtt_init_default;
 
 #[cortex_m_rt::entry]

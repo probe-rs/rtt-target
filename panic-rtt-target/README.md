@@ -1,10 +1,10 @@
-# panic-rtt
+# panic-rtt-target
 
-[![crates.io](https://meritbadge.herokuapp.com/panic-rtt)](https://crates.io/crates/panic-rtt) [![documentation](https://docs.rs/panic-rtt/badge.svg)](https://docs.rs/panic-rtt)
+[![crates.io](https://meritbadge.herokuapp.com/panic-rtt-target)](https://crates.io/crates/panic-rtt-target) [![documentation](https://docs.rs/panic-rtt-target/badge.svg)](https://docs.rs/panic-rtt-target)
 
 Logs panic messages over RTT. A companion crate for rtt-target.
 
-## [Documentation](https://docs.rs/panic-rtt)
+## [Documentation](https://docs.rs/panic-rtt-target)
 
 RTT must have been initialized by using one of the `rtt_init` macros. Otherwise you will get a linker error at compile time.
 
@@ -18,7 +18,7 @@ Cargo.toml:
 
 ```toml
 [dependencies]
-panic-rtt = { version = "x.y.z", features = ["cortex-m"] }
+panic-rtt-target = { version = "x.y.z", features = ["cortex-m"] }
 ```
 
 main.rs:
@@ -26,7 +26,7 @@ main.rs:
 ```rust
 #![no_std]
 
-use panic_rtt as _;
+use panic_rtt_target as _;
 use rtt_target::rtt_init_default;
 
 fn main() -> ! {

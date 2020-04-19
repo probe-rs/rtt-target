@@ -16,7 +16,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! panic-rtt = { version = "x.y.z", features = ["cortex-m"] }
+//! panic-rtt-target = { version = "x.y.z", features = ["cortex-m"] }
 //! ```
 //!
 //! main.rs:
@@ -24,7 +24,7 @@
 //! ```no_run
 //! #![no_std]
 //!
-//! use panic_rtt as _;
+//! use panic_rtt_target as _;
 //! use rtt_target::rtt_init_default;
 //!
 //! fn main() -> ! {
@@ -70,4 +70,4 @@ fn panic(info: &PanicInfo) -> ! {
 }
 
 #[cfg(not(any(feature = "cortex-m")))]
-compile_error!("You must specify a platform feature for panic-rtt, such as 'cortex-m'.");
+compile_error!("You must specify a platform feature for panic-rtt-target, such as 'cortex-m'.");
