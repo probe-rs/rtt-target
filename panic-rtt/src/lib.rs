@@ -1,9 +1,12 @@
-//! Logs panic messages over RTT.
+//! Logs panic messages over RTT. A companion crate for rtt-target.
 //!
 //! RTT must have been initialized by using one of the `rtt_init` macros. Otherwise you will get a
-//! linker error at compile time. Panics are always logged on a channel 0. Upon panicking the
-//! channel mode is also automatically set to `BlockIfFull`, so that the full message will always be
-//! logged.
+//! linker error at compile time.
+//!
+//! Panics are always logged on channel 0. Upon panicking the channel mode is also automatically set
+//! to `BlockIfFull`, so that the full message will always be logged. If the code somehow manages to
+//! panic at runtime before RTT is initialized (quite unlikely), or if channel 0 doesn't exist,
+//! nothing is logged.
 //!
 //! A platform feature such as `cortex-m` is required to use this crate.
 //!
@@ -18,7 +21,7 @@
 //!
 //! main.rs:
 //!
-//! ```ignore
+//! ```no_run
 //! #![no_std]
 //!
 //! use panic_rtt as _;
