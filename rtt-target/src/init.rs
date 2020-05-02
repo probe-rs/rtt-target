@@ -68,7 +68,7 @@ macro_rules! rtt_init_wrappers {
 ///     up: {
 ///         0: { // channel number
 ///             size: 1024 // buffer size in bytes
-///             mode: NoBlockTrim // mode (optional, default: NoBlockTrim, see enum ChannelMode)
+///             mode: NoBlockSkip // mode (optional, default: NoBlockSkip, see enum ChannelMode)
 ///             name: "Terminal" // name (optional, default: no name)
 ///         }
 ///         1: {
