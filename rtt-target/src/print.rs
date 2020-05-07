@@ -170,7 +170,7 @@ macro_rules! rprintln {
 /// Initializes RTT with a single up channel and sets it as the print channel for the printing
 /// macros.
 ///
-/// The optional arguments specify the blocking mode (default: `NoBlockTrim`) and size of the buffer
+/// The optional arguments specify the blocking mode (default: `NoBlockSkip`) and size of the buffer
 /// in bytes (default: 1024). See [`rtt_init`] for more details.
 ///
 /// This macro is defined only if the [`set_print_channel`] function is available, i.e. if you have
@@ -197,6 +197,6 @@ macro_rules! rtt_init_print {
     };
 
     () => {
-        $crate::rtt_init_print!(NoBlockTrim, 1024);
+        $crate::rtt_init_print!(NoBlockSkip, 1024);
     };
 }
