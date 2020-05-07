@@ -19,8 +19,9 @@ pub type CriticalSectionFunc = fn(arg: *mut (), f: fn(arg: *mut ()) -> ()) -> ()
 ///
 /// # Example
 ///
-/// Because the function takes a *pointer to a function pointer* as an argument, the syntax to call
-/// it is slightly convoluted. In this example, `interrupt::free` is a function that establishes a
+/// Because the function takes a *static reference to a function pointer* as an argument, the call
+/// requires a manual cast. Luckily Rust will automatically promote a reference to a suitable
+/// closure to `'static`. In this example, `interrupt::free` is a function that establishes a
 /// critical section and calls the supplied function.
 ///
 /// ```
@@ -33,8 +34,8 @@ pub type CriticalSectionFunc = fn(arg: *mut (), f: fn(arg: *mut ()) -> ()) -> ()
 ///     unsafe {
 ///         rtt_target::set_print_channel_cs(
 ///             channels.up.0,
-///             &((|arg, f| interrupt::free(|_| f(arg))) as rtt_target::CriticalSectionFunc) as *const _,
-///         )
+///             &((|arg, f| interrupt::free(|_| f(arg))) as rtt_target::CriticalSectionFunc),
+///         );
 ///     }
 ///
 ///     loop {
@@ -47,15 +48,15 @@ pub type CriticalSectionFunc = fn(arg: *mut (), f: fn(arg: *mut ()) -> ()) -> ()
 ///
 /// This function is unsafe because the user must guarantee that the `cs` function pointer passed in
 /// adheres to the [`CriticalSectionFunc`] specification.
-pub unsafe fn set_print_channel_cs(channel: UpChannel, cs: *const CriticalSectionFunc) {
-    (&*cs)(channel.0 as *mut (), |channel_ptr| {
+pub unsafe fn set_print_channel_cs(channel: UpChannel, cs: &'static CriticalSectionFunc) {
+    cs(channel.0 as *mut (), |channel_ptr| {
         ptr::write(
             PRINT_TERMINAL.as_mut_ptr(),
             TerminalChannel::new(UpChannel(channel_ptr as *mut crate::rtt::RttChannel)),
         );
     });
 
-    CRITICAL_SECTION.store(cs as *mut _, Ordering::SeqCst);
+    CRITICAL_SECTION.store(cs as *const _ as *mut _, Ordering::SeqCst);
 }
 
 /// Sets the channel to use for [`rprint`] and [`rprintln`].
@@ -67,7 +68,7 @@ pub fn set_print_channel(channel: UpChannel) {
     unsafe {
         set_print_channel_cs(
             channel,
-            &((|arg, f| cortex_m::interrupt::free(|_| f(arg))) as CriticalSectionFunc) as *const _,
+            &((|arg, f| cortex_m::interrupt::free(|_| f(arg))) as CriticalSectionFunc),
         );
     }
 }
