@@ -116,7 +116,7 @@ pub mod print_impl {
 /// Prints to the print RTT channel. Works just like the standard `print`.
 ///
 /// Before use the print channel has to be set with [`rtt_init_print`] or [`set_print_channel`]. If
-/// the channel isn't set, the output is ignored without error.
+/// the channel isn't set, the message is silently discarded.
 ///
 /// The macro also supports output to multiple virtual terminals on the channel. Use the syntax
 /// ```rprint!(=> 1, "Hello!");``` to write to terminal number 1, for example. Terminal numbers
@@ -140,7 +140,7 @@ macro_rules! rprint {
 /// Prints to the print RTT channel, with a newline. Works just like the standard `println`.
 ///
 /// Before use the print channel has to be set with [`rtt_init_print`] or [`set_print_channel`]. If
-/// the channel isn't set, the output is ignored without error.
+/// the channel isn't set, the message is silently discarded.
 ///
 /// The macro also supports output to multiple virtual terminals on the channel. Use the syntax
 /// ```rprintln!(=> 1, "Hello!");``` to write to terminal number 1, for example. Terminal numbers

@@ -26,6 +26,27 @@
 //! In an interrupt-based application with realtime constraints you could use a separate channel for
 //! every interrupt context to allow for lock-free logging.
 //!
+//! # Channels and virtual terminals
+//!
+//! RTT supports multiple *channels* in both directions. Up channels go from target to host, and
+//! down channels go from host to target. Each channel is identified by its direction and number.
+//!
+//! By convention channel 0 is reserved for terminal use. In the up direction there is a set of
+//! escape sequences that further enable the single channel to be treated as up to 16 *virtual
+//! terminals*. This can be used to separate different types of messages (for example, log levels)
+//! from each other without having to allocate memory for multiple buffers. As a downside, multiple
+//! threads cannot write to the same channel at once, even if using different virtual terminal
+//! numbers, so access has to be synchronized. Down channel 0 is conventionally used for keyboard
+//! input.
+//!
+//! **Note:** Some host side programs only display channel 0 by default, so to see the other
+//! channels you might need to configure them appropriately.
+//!
+//! The other channels can be used to either enable concurrent use from multiple sources without
+//! locking, or to send e.g. binary data in either direction.
+//!
+//! Channel 0 can also be used for arbitrary data, but most tools expect it to be plain text.
+//!
 //! # Channel modes
 //!
 //! By default, channels start in [`NoBlockSkip`](ChannelMode::NoBlockSkip) mode, which discards
@@ -33,9 +54,9 @@
 //! probe attached or if the host is not reading the buffers. However if the application outputs
 //! faster than the host can read (which is easy to do, because writing is very fast), messages will
 //! be lost. Channels can be set to blocking mode if this is desirable, however in that case the
-//! application will likely freeze eventually if the debugger is not attached.
+//! application will likely freeze when the buffer fills up if a debugger is not attached.
 //!
-//! The channel mode can also be changed on the fly by the debug probe. Therefore it might be
+//! The channel mode can also be changed on the fly by the debug probe. Therefore it may be
 //! advantageous to use a non-blocking mode in your microcontroller code, and set a blocking mode as
 //! needed when debugging. That way you will never end up with an application that freezes without a
 //! debugger connected.
@@ -45,7 +66,7 @@
 //! For no-hassle output the [`rprint`] and [`rprintln`] macros are provided. They use a single down
 //! channel defined at initialization time, and a critical section for synchronization, and they
 //! therefore work exactly like the standard `println` style macros. They can be used from any
-//! context.
+//! context. The [`rtt_init_print`] convenience macro initializes printing on channel 0.
 //!
 //! ```
 //! use rtt_target::{rtt_init_print, rprintln};
