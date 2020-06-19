@@ -3,6 +3,7 @@
 //! accessed from the rtt_init! macro.
 
 use crate::ChannelMode;
+use core::sync::atomic::{fence, Ordering::SeqCst};
 use core::cmp::min;
 use core::fmt;
 use core::ptr;
@@ -29,14 +30,17 @@ impl RttHeader {
         ptr::write_volatile(&mut self.max_up_channels, max_up_channels);
         ptr::write_volatile(&mut self.max_down_channels, max_down_channels);
 
+        // Ensure that the header is written to memory last (makes race conditions less likely)
+        fence(SeqCst);
+
         // Copy the ID in two parts to avoid having the ID string in memory in full. The ID is
         // copied last to make it less likely an unfinished control block is detected by the host.
 
-        ptr::copy_nonoverlapping(b"SEGG_" as *const u8, self.id.as_mut_ptr(), 5);
+        volatile_copy_nonoverlapping(b"SEGG_" as *const u8, self.id.as_mut_ptr(), 5);
 
-        ptr::copy_nonoverlapping(
+        volatile_copy_nonoverlapping(
             b"ER RTT\0\0\0\0\0\0" as *const u8,
-            self.id.as_mut_ptr().offset(4),
+            self.id.as_mut_ptr().add(4),
             12,
         );
     }
@@ -66,7 +70,7 @@ impl RttChannel {
     pub unsafe fn init(&mut self, name: *const u8, mode: ChannelMode, buffer: *mut [u8]) {
         ptr::write_volatile(&mut self.name, name);
         ptr::write_volatile(&mut self.size, (&*buffer).len());
-        self.set_mode(mode);
+        self.flags.set(mode as usize);
 
         // Set buffer last as it can be used to detect if the channel has been initialized
         ptr::write_volatile(&mut self.buffer, buffer as *mut u8);
@@ -104,8 +108,8 @@ impl RttChannel {
             }
 
             unsafe {
-                ptr::copy_nonoverlapping(
-                    self.buffer.offset(read as isize),
+                volatile_copy_nonoverlapping(
+                    self.buffer.add(read),
                     buf.as_mut_ptr(),
                     count,
                 );
@@ -121,6 +125,9 @@ impl RttChannel {
 
             buf = &mut buf[count..];
         }
+
+        // Ensure the data is read from memory before updating the pointer
+        fence(SeqCst);
 
         self.read.set(read);
 
@@ -217,9 +224,9 @@ impl RttWriter<'_> {
             }
 
             unsafe {
-                ptr::copy_nonoverlapping(
+                volatile_copy_nonoverlapping(
                     buf.as_ptr(),
-                    self.chan.buffer.offset(self.write as isize),
+                    self.chan.buffer.add(self.write),
                     count,
                 );
             }
@@ -263,6 +270,9 @@ impl RttWriter<'_> {
         match self.state {
             WriteState::Finished => return,
             WriteState::Full | WriteState::Writable => {
+                // Ensure the data is written into memory before updating the pointer
+                fence(SeqCst);
+
                 // Commit the write pointer so the host can see the new data
                 self.chan.write.set(self.write);
                 self.state = WriteState::Finished;
@@ -281,5 +291,13 @@ impl fmt::Write for RttWriter<'_> {
     fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
         self.write(s.as_bytes());
         Ok(())
+    }
+}
+
+/// Volatile equivalent of ptr::copy_nonoverlapping. Should be replaced with a built-in function if
+/// one is ever stabilized.
+unsafe fn volatile_copy_nonoverlapping(src: *const u8, dst: *mut u8, count: usize) {
+    for i in 0..count {
+        ptr::write_volatile(dst.add(i), ptr::read_volatile(src.add(i)));
     }
 }
