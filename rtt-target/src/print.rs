@@ -148,15 +148,6 @@ macro_rules! rprint {
 /// range from 0 to 15.
 #[macro_export]
 macro_rules! rprintln {
-    () => {
-        $crate::print_impl::write_str(0, "\n");
-    };
-    ($fmt:expr) => {
-        $crate::print_impl::write_str(0, concat!($fmt, "\n"));
-    };
-    ($fmt:expr, $($arg:tt)*) => {
-        $crate::print_impl::write_fmt(0, format_args!(concat!($fmt, "\n"), $($arg)*));
-    };
     (=> $terminal:expr) => {
         $crate::print_impl::write_str($terminal, "\n");
     };
@@ -165,6 +156,15 @@ macro_rules! rprintln {
     };
     (=> $terminal:expr, $fmt:expr, $($arg:tt)*) => {
         $crate::print_impl::write_fmt($terminal, format_args!(concat!($fmt, "\n"), $($arg)*));
+    };
+    () => {
+        $crate::print_impl::write_str(0, "\n");
+    };
+    ($fmt:expr) => {
+        $crate::print_impl::write_str(0, concat!($fmt, "\n"));
+    };
+    ($fmt:expr, $($arg:tt)*) => {
+        $crate::print_impl::write_fmt(0, format_args!(concat!($fmt, "\n"), $($arg)*));
     };
 }
 
