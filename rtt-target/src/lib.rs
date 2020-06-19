@@ -183,8 +183,9 @@ impl UpChannel {
             return None;
         }
 
-        // First offset moves past the header, second offset finds the channel struct
-        let ptr = (CONTROL_BLOCK.as_ptr().offset(1) as *mut rtt::RttChannel).offset(number as isize);
+        // First addition moves to the start of the up channel array, second addition moves to the
+        // correct channel.
+        let ptr = (CONTROL_BLOCK.as_ptr().add(1) as *mut rtt::RttChannel).add(number);
 
         if !(&*ptr).is_initialized() {
             return None;
