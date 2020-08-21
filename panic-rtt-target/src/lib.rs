@@ -42,9 +42,9 @@
 
 #[allow(unused)]
 use core::{
-    sync::atomic::{compiler_fence, Ordering::SeqCst},
     fmt::Write,
     panic::PanicInfo,
+    sync::atomic::{compiler_fence, Ordering::SeqCst},
 };
 
 #[allow(unused)]

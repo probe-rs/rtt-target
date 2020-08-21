@@ -1,5 +1,4 @@
 #![no_main]
-
 #![no_std]
 
 use panic_rtt_target as _;
