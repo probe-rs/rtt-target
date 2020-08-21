@@ -70,4 +70,8 @@ fn panic(info: &PanicInfo) -> ! {
 }
 
 #[cfg(not(any(feature = "cortex-m")))]
-compile_error!("You must specify a platform feature for panic-rtt-target, such as 'cortex-m'.");
+compile_error!(concat!(
+    "You must specify a platform feature for panic-rtt-target, such as 'cortex-m'.\r\n",
+    "Example:\r\n",
+    "  # Cargo.toml\r\n",
+    "  panic-rtt-target = { version = \"x.y.z\", features = [\"cortex-m\"] }\r\n"));
