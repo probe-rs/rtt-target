@@ -6,7 +6,7 @@ use crate::ChannelMode;
 use core::cmp::min;
 use core::fmt;
 use core::ptr;
-use vcell::VolatileCell;
+use core::sync::atomic::{fence, AtomicUsize, Ordering::SeqCst};
 
 // Note: this is zero-initialized in the initialization macro so all zeros must be a valid value
 #[repr(C)]
@@ -34,6 +34,8 @@ impl RttHeader {
 
         ptr::copy_nonoverlapping(b"SEGG_" as *const u8, self.id.as_mut_ptr(), 5);
 
+        fence(SeqCst);
+
         ptr::copy_nonoverlapping(
             b"ER RTT\0\0\0\0\0\0" as *const u8,
             self.id.as_mut_ptr().offset(4),
@@ -52,9 +54,9 @@ pub struct RttChannel {
     name: *const u8,
     buffer: *mut u8,
     size: usize,
-    write: VolatileCell<usize>,
-    read: VolatileCell<usize>,
-    flags: VolatileCell<usize>,
+    write: AtomicUsize,
+    read: AtomicUsize,
+    flags: AtomicUsize,
 }
 
 impl RttChannel {
@@ -77,7 +79,7 @@ impl RttChannel {
     }
 
     pub(crate) fn mode(&self) -> ChannelMode {
-        let mode = self.flags.get() & 3;
+        let mode = self.flags.load(SeqCst) & 3;
 
         if mode <= 2 {
             unsafe { core::mem::transmute(mode) }
@@ -87,7 +89,8 @@ impl RttChannel {
     }
 
     pub(crate) fn set_mode(&self, mode: ChannelMode) {
-        self.flags.set((self.flags.get() & !3) | mode as usize);
+        self.flags
+            .store((self.flags.load(SeqCst) & !3) | mode as usize, SeqCst);
     }
 
     // This method should only be called for down channels.
@@ -122,7 +125,7 @@ impl RttChannel {
             buf = &mut buf[count..];
         }
 
-        self.read.set(read);
+        self.read.store(read, SeqCst);
 
         total
     }
@@ -147,15 +150,15 @@ impl RttChannel {
     }
 
     fn read_pointers(&self) -> (usize, usize) {
-        let write = self.write.get();
-        let read = self.read.get();
+        let write = self.write.load(SeqCst);
+        let read = self.read.load(SeqCst);
 
         if write >= self.size || read >= self.size {
             // Pointers have been corrupted. This doesn't happen in well-behaved programs, so
             // attempt to reset the buffer.
 
-            self.write.set(0);
-            self.read.set(0);
+            self.write.store(0, SeqCst);
+            self.read.store(0, SeqCst);
             return (0, 0);
         }
 
@@ -264,7 +267,7 @@ impl RttWriter<'_> {
             WriteState::Finished => return,
             WriteState::Full | WriteState::Writable => {
                 // Commit the write pointer so the host can see the new data
-                self.chan.write.set(self.write);
+                self.chan.write.store(self.write, SeqCst);
                 self.state = WriteState::Finished;
             }
         }
