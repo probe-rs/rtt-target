@@ -213,7 +213,8 @@ impl RttWriter<'_> {
                     }
 
                     ChannelMode::BlockIfFull => {
-                        // Spin until buffer is not full!
+                        // Commit everything written so far and spin until more can be written
+                        self.chan.write.store(self.write, SeqCst);
                         continue;
                     }
                 }
