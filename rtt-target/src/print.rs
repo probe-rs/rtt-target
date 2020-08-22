@@ -207,13 +207,14 @@ macro_rules! rtt_init_print {
 #[cfg(not(any(feature = "cortex-m")))]
 #[macro_export]
 macro_rules! rtt_init_print {
-    ($_:tt) => {
+    ($($_:tt)*) => {
         compile_error!(concat!(
             "rtt_init_print! is only available if a platform support feature is enabled.\r\n",
             "Solutions:\r\n",
             "- Enable a platform support feature:\r\n",
             "    # Cargo.toml\r\n",
             "    rtt-target = { version = \"x.y.z\", features = [\"cortex-m\"] }\r\n",
-            "- OR use set_print_channel_cs() instead if you want to provide your own locking.\r\n"))
+            "- OR use set_print_channel_cs() instead if you want to provide your own locking.\r\n"
+        ))
     };
 }
