@@ -63,12 +63,16 @@ pub unsafe fn set_print_channel_cs(channel: UpChannel, cs: &'static CriticalSect
 ///
 /// This function is available only if you have enabled a platform support feature. Otherwise,
 /// [`set_print_channel_cs`] must be used.
-#[cfg(feature = "cortex-m")]
+#[cfg(any(feature = "cortex-m", feature = "riscv"))]
 pub fn set_print_channel(channel: UpChannel) {
+    #[cfg(feature = "cortex-m")]
+    use cortex_m as arch;
+    #[cfg(feature = "riscv")]
+    use riscv as arch;
     unsafe {
         set_print_channel_cs(
             channel,
-            &((|arg, f| cortex_m::interrupt::free(|_| f(arg))) as CriticalSectionFunc),
+            &((|arg, f| arch::interrupt::free(|_| f(arg))) as CriticalSectionFunc),
         );
     }
 }
@@ -176,7 +180,7 @@ macro_rules! rprintln {
 ///
 /// This macro is defined only if the [`set_print_channel`] function is available, i.e. if you have
 /// enabled a platform support feature.
-#[cfg(any(feature = "cortex-m"))]
+#[cfg(any(feature = "cortex-m", feature = "riscv"))]
 #[macro_export]
 macro_rules! rtt_init_print {
     ($mode:ident, $size:literal) => {
@@ -204,7 +208,7 @@ macro_rules! rtt_init_print {
 
 /// This version of the macro only is defined if no platform support feature is enabled and outputs
 /// a more friendly error message.
-#[cfg(not(any(feature = "cortex-m")))]
+#[cfg(not(any(feature = "cortex-m", feature = "riscv")))]
 #[macro_export]
 macro_rules! rtt_init_print {
     ($($_:tt)*) => {
