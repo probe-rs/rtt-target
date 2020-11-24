@@ -10,11 +10,13 @@ Target side implementation of the RTT (Real-Time Transfer) I/O protocol. RTT imp
 
 While this crate is platform agnostic, some platform-specific code is needed for locking if you want to use the global `rprintln!` macro.
 
-If using Cortex-M, there is built-in support with a feature flag:
+If using Cortex-M or RISC-V, there is built-in support with a feature flag:
 
 ```toml
 # Cargo.toml
 rtt-target = { version = "x.y.z", features = ["cortex-m"] }
+# or
+rtt-target = { version = "x.y.z", features = ["riscv"] }
 ```
 
 Otherwise, check the documentation for the `set_print_channel_cs` function.

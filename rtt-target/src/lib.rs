@@ -9,8 +9,8 @@
 //!
 //! This crate is platform agnostic and can be used on any chip that supports background memory
 //! access via its debug interface. The printing macros require a critical section which is
-//! platform-dependent. ARM Cortex-M has built-in support, which can be enabled with the "cortex-m"
-//! feature flag.
+//! platform-dependent. Built-in ARM Cortex-M support can be enabled with the "cortex-m" feature,
+//! and RISC-V support can be enabled with the "riscv" feature.
 //!
 //! To interface with RTT from the host computer, a debug probe such as an ST-Link or J-Link is
 //! required. The normal debug protocol (e.g. SWD) is used to access RTT, so no extra connections
