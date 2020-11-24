@@ -174,7 +174,6 @@ impl UpChannel {
     /// is only safe to use in panic handlers and the like that permanently disable interrupts.
     pub unsafe fn conjure(number: usize) -> Option<UpChannel> {
         extern "C" {
-            #[no_mangle]
             #[link_name = "_SEGGER_RTT"]
             static mut CONTROL_BLOCK: MaybeUninit<rtt::RttHeader>;
         }
