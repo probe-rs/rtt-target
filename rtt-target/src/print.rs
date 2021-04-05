@@ -6,7 +6,7 @@ use crate::{TerminalChannel, TerminalWriter, UpChannel};
 
 static PRINT_TERMINAL: Mutex<RefCell<Option<TerminalChannel>>> = Mutex::new(RefCell::new(None));
 
-/// Sets the channel to use for [`rprint`] and [`rprintln`].
+/// Sets the channel to use for [`rprint`], [`rprintln`], [`debug_rptint`] and [`debug_rprintln`].
 pub fn set_print_channel(channel: UpChannel) {
     critical_section::with(|cs| {
         *PRINT_TERMINAL.borrow_ref_mut(cs) = Some(TerminalChannel::new(UpChannel(channel.0)))
