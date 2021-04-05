@@ -1,4 +1,4 @@
-/// This module contains macros that work exactly like thier equivalents without `debug_*`
+//! This module contains macros that work exactly like thier equivalents without `debug_*`
 
 /* From init.rs */
 
@@ -34,7 +34,7 @@ macro_rules! debug_rtt_init_print {
 /// [`rprintln`](crate::rprintln)
 #[macro_export]
 macro_rules! debug_rprintln {
-    ($($arg:tt)*) => (if cfg!(debug_assertions) { $crate::rprintln!($($arg)*); })   
+    ($($arg:tt)*) => (if cfg!(debug_assertions) { $crate::rprintln!($($arg)*); })
 }
 
 /// The same as [`rprint`] macro but works only in debug
@@ -42,6 +42,5 @@ macro_rules! debug_rprintln {
 /// [`rprint`](crate::rprint)
 #[macro_export]
 macro_rules! debug_rprint {
-    ($($arg:tt)*) => (if cfg!(debug_assertions) { $crate::rprint!($($arg)*); })   
+    ($($arg:tt)*) => (if cfg!(debug_assertions) { $crate::rprint!($($arg)*); })
 }
-

@@ -86,6 +86,11 @@
 //! when build with `--release`. It's save to use [`debug_rprintln`] and [`debug_rprint`] even if
 //! rtt was initialized with not debug rtt initialization function.
 //!
+//! Under the hood this use [debug-assertions] flag. Set this flag to true to include all debug
+//! macros also in release mode.
+//!
+//! [debug-assertions]: https://doc.rust-lang.org/cargo/reference/profiles.html#debug-assertions
+//!
 //! ```
 //! use rtt_target::{debug_rtt_init_print, debug_rprintln};
 //!
@@ -112,6 +117,8 @@ use ufmt_write::uWrite;
 #[macro_use]
 mod init;
 
+#[doc(hidden)]
+/// Public due to access from macro
 pub mod debug;
 /// Public due to access from macro
 #[doc(hidden)]
