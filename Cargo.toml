@@ -1,6 +1,6 @@
 [workspace]
-
 members = [
+    "examples-cortex-m",
     "rtt-target",
     "panic-rtt-target",
     "panic-test",
@@ -9,3 +9,10 @@ members = [
 [patch.crates-io]
 rtt-target = { path = "./rtt-target" }
 panic-rtt-target = { path = "./panic-rtt-target" }
+
+# This is for the examples/tests
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"

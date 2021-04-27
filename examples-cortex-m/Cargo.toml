@@ -1,0 +1,21 @@
+[package]
+name = "examples-cortex-m"
+version = "0.1.0"
+authors = ["Matti Virkkunen <mvirkkunen@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+cortex-m = "0.7.1"
+cortex-m-rt = "0.6.12"
+panic-halt = "0.2.0"
+rtt-target = { path = "../rtt-target", features = ["cortex-m"] }
+ufmt = "0.1.0"
+
+[[bin]]
+name = "custom"
+
+[[bin]]
+name = "print"
+
+[[bin]]
+name = "ufmt"

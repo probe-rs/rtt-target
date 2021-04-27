@@ -16,32 +16,5 @@ ufmt-write = "0.1.0"
 cortex-m = { version = "0.7.1", optional = true }
 riscv = { version = "0.6.0", optional = true }
 
-# Dependencies used only for examples
-ufmt = { version = "0.1.0", optional = true }
-cortex-m-rt = { version = "0.6.12", optional = true }
-panic-halt = { version = "0.2.0", optional = true }
-
-[features]
-examples-cortex-m = ["cortex-m", "cortex-m-rt", "panic-halt", "ufmt"]
-
-[[example]]
-name = "cortex-m-custom"
-required-features = ["examples-cortex-m"]
-
-[[example]]
-name = "cortex-m-print"
-required-features = ["examples-cortex-m"]
-
-[[example]]
-name = "cortex-m-ufmt"
-required-features = ["examples-cortex-m"]
-
-# This is for the examples
-[profile.release]
-codegen-units = 1
-lto = true
-opt-level = "s"
-panic = "abort"
-
 [package.metadata.docs.rs]
 features = ["cortex-m"]
