@@ -37,7 +37,3 @@ fn main() {
     }
 }
 ```
-
-## Running the examples
-
-To run the examples you will have to provide any needed platform specific configuration such as `.cargo/config` or `memory.x` yourself. Additionally you must specify a feature to enable the example dependencies, such as `--feature examples-cortex-m`.
