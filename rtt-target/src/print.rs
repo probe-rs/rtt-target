@@ -2,7 +2,7 @@ use crate::{TerminalChannel, TerminalWriter, UpChannel};
 use core::fmt::{self, Write as _};
 use core::mem::MaybeUninit;
 use core::ptr;
-use core::sync::atomic::{AtomicPtr, Ordering};
+use atomic_polyfill::{AtomicPtr, Ordering};
 
 static CRITICAL_SECTION: AtomicPtr<CriticalSectionFunc> = AtomicPtr::new(core::ptr::null_mut());
 static mut PRINT_TERMINAL: MaybeUninit<TerminalChannel> = MaybeUninit::uninit();
