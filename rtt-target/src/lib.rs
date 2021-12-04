@@ -106,6 +106,36 @@
 //!
 //! Please note that because a critical section is used, printing into a blocking channel will cause
 //! the application to block and freeze when the buffer is full.
+//!
+//! # Reading
+//!
+//! The following example shows how to set up the RTT to read simple input sent from the host
+//! to the target.
+//!
+//! ```
+//! use rtt_target::{rtt_init_default, rprintln};
+//!
+//! fn main() -> ! {
+//!     let mut channels = rtt_init_default!();
+//!     let mut read_buf: [u8; 16] = [0; 16];
+//!     set_print_channel(channels.up.0);
+//!     rprintln!("Please enter the mode [0: Mode 0, 1: Mode 1]: ");
+//!     let mut read = 0;
+//!     let mut mode = -1;
+//!     while mode == -1 {
+//!         read = channels.down.0.read(&mut read_buf);
+//!         for i in 0..read {
+//!             let val = read_buf[i] as char;
+//!             if val == '0' {
+//!                 mode = 0;
+//!             } else if val == '1' {
+//!                 mode = 1;
+//!             }
+//!         }
+//!     }
+//!     rprintln!("Read mode {}", mode);
+//! }
+//! ```
 
 #![no_std]
 
