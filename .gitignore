@@ -1,6 +1,5 @@
 /target
 .cargo/config
 Cargo.lock
-memory.x
 test.sh
 scratch.txt

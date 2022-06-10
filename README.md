@@ -37,3 +37,7 @@ fn main() {
     }
 }
 ```
+
+## Development
+
+The examples-cortex-m and panic-test crates come with build files for the venerable STM32F103C8xx by default, but can be easily adapted for any chip as they contain only minimal platform-specific runtime code to get `fn main` to run.
