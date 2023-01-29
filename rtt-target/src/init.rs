@@ -150,8 +150,8 @@ macro_rules! rtt_init {
             cb.header.init(cb.up_channels.len(), cb.down_channels.len());
 
             pub struct Channels {
-                $( up: $crate::rtt_init_repeat!({ UpChannel, } {}; $($up)*), )?
-                $( down: $crate::rtt_init_repeat!({ DownChannel, } {}; $($down)*), )?
+                $( pub up: $crate::rtt_init_repeat!({ UpChannel, } {}; $($up)*), )?
+                $( pub down: $crate::rtt_init_repeat!({ DownChannel, } {}; $($down)*), )?
             }
 
             Channels {
