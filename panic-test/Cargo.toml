@@ -5,6 +5,6 @@ authors = ["Matti Virkkunen <mvirkkunen@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-cortex-m-rt = "0.6.12"
+cortex-m-rt = "0.7"
 panic-rtt-target = { path = "../panic-rtt-target", features = ["cortex-m"] }
 rtt-target = { path = "../rtt-target" }
