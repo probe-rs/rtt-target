@@ -116,24 +116,16 @@
 //! use rtt_target::{rtt_init_default, rprintln};
 //!
 //! fn main() -> ! {
-//!     let mut channels = rtt_init_default!();
-//!     let mut read_buf: [u8; 16] = [0; 16];
-//!     set_print_channel(channels.up.0);
-//!     rprintln!("Please enter the mode [0: Mode 0, 1: Mode 1]: ");
-//!     let mut read = 0;
-//!     let mut mode = None;
-//!     while mode.is_none() {
+//!     let mode = loop {
 //!         read = channels.down.0.read(&mut read_buf);
 //!         for i in 0..read {
-//!             let val = read_buf[i] as char;
-//!             if val == '0' {
-//!                 mode = Some(0);
-//!             } else if val == '1' {
-//!                 mode = Some(1);
+//!             match read_buf[i] as char {
+//!                 '0' => break 0,
+//!                 '1' => break 1,
+//!                 _ => {}
 //!             }
 //!         }
-//!     }
-//!     rprintln!("Read mode {}", mode);
+//!     };
 //! }
 //! ```
 
