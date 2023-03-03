@@ -121,15 +121,15 @@
 //!     set_print_channel(channels.up.0);
 //!     rprintln!("Please enter the mode [0: Mode 0, 1: Mode 1]: ");
 //!     let mut read = 0;
-//!     let mut mode = -1;
-//!     while mode == -1 {
+//!     let mut mode = None;
+//!     while mode.is_none() {
 //!         read = channels.down.0.read(&mut read_buf);
 //!         for i in 0..read {
 //!             let val = read_buf[i] as char;
 //!             if val == '0' {
-//!                 mode = 0;
+//!                 mode = Some(0);
 //!             } else if val == '1' {
-//!                 mode = 1;
+//!                 mode = Some(1);
 //!             }
 //!         }
 //!     }
