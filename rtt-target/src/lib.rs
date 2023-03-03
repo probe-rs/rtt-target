@@ -106,6 +106,28 @@
 //!
 //! Please note that because a critical section is used, printing into a blocking channel will cause
 //! the application to block and freeze when the buffer is full.
+//!
+//! # Reading
+//!
+//! The following example shows how to set up the RTT to read simple input sent from the host
+//! to the target.
+//!
+//! ```
+//! use rtt_target::{rtt_init_default, rprintln};
+//!
+//! fn main() -> ! {
+//!     let mode = loop {
+//!         read = channels.down.0.read(&mut read_buf);
+//!         for i in 0..read {
+//!             match read_buf[i] as char {
+//!                 '0' => break 0,
+//!                 '1' => break 1,
+//!                 _ => {}
+//!             }
+//!         }
+//!     };
+//! }
+//! ```
 
 #![no_std]
 
@@ -147,6 +169,7 @@ impl UpChannel {
         UpChannel(channel)
     }
 
+    #[allow(clippy::mut_from_ref)]
     fn channel(&self) -> &mut rtt::RttChannel {
         unsafe { &mut *self.0 }
     }
@@ -204,7 +227,7 @@ impl UpChannel {
             static mut CONTROL_BLOCK: MaybeUninit<rtt::RttHeader>;
         }
 
-        if number >= (&*CONTROL_BLOCK.as_ptr()).max_up_channels() {
+        if number >= (*CONTROL_BLOCK.as_ptr()).max_up_channels() {
             return None;
         }
 
@@ -212,7 +235,7 @@ impl UpChannel {
         // correct channel.
         let ptr = (CONTROL_BLOCK.as_ptr().add(1) as *mut rtt::RttChannel).add(number);
 
-        if !(&*ptr).is_initialized() {
+        if !(*ptr).is_initialized() {
             return None;
         }
 
