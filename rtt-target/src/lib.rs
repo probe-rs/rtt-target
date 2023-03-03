@@ -82,11 +82,11 @@
 //! # Debug
 //!
 //! To use rtt functionality only in debug builds use macros prefixed with `debug_*`. They have
-//! exactly the same functionality as without debug - the only difference is they are removed
-//! when build with `--release`. It's save to use [`debug_rprintln`] and [`debug_rprint`] even if
-//! rtt was initialized with not debug rtt initialization function.
+//! exactly the same functionality as without debug - the only difference is that they are removed
+//! when built with `--release`. It's save to use [`debug_rprintln`] and [`debug_rprint`] even if
+//! rtt was initialized with [`rtt_init`] instead of [`debug_rtt_init`].
 //!
-//! Under the hood this use [debug-assertions] flag. Set this flag to true to include all debug
+//! Under the hood this uses the [`debug-assertions`] flag. Set this flag to true to include all debug
 //! macros also in release mode.
 //!
 //! [debug-assertions]: https://doc.rust-lang.org/cargo/reference/profiles.html#debug-assertions
