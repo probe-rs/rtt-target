@@ -67,7 +67,7 @@ impl RttChannel {
     /// The pointer arguments must point to a valid null-terminated name and writable buffer.
     pub unsafe fn init(&mut self, name: *const u8, mode: ChannelMode, buffer: *mut [u8]) {
         ptr::write_volatile(&mut self.name, name);
-        ptr::write_volatile(&mut self.size, (&*buffer).len());
+        ptr::write_volatile(&mut self.size, (*buffer).len());
         self.set_mode(mode);
 
         // Set buffer last as it can be used to detect if the channel has been initialized
@@ -75,7 +75,7 @@ impl RttChannel {
     }
 
     pub fn is_initialized(&self) -> bool {
-        self.buffer != ptr::null_mut()
+        self.buffer.is_null()
     }
 
     pub(crate) fn mode(&self) -> ChannelMode {
@@ -100,18 +100,14 @@ impl RttChannel {
         let mut total = 0;
 
         // Read while buffer contains data and output buffer has space (maximum of two iterations)
-        while buf.len() > 0 {
+        while !buf.is_empty() {
             let count = min(self.readable_contiguous(write, read), buf.len());
             if count == 0 {
                 break;
             }
 
             unsafe {
-                ptr::copy_nonoverlapping(
-                    self.buffer.offset(read as isize),
-                    buf.as_mut_ptr(),
-                    count,
-                );
+                ptr::copy_nonoverlapping(self.buffer.add(read), buf.as_mut_ptr(), count);
             }
 
             total += count;
@@ -142,11 +138,11 @@ impl RttChannel {
 
     /// Gets the amount of contiguous data available for reading
     fn readable_contiguous(&self, write: usize, read: usize) -> usize {
-        (if read > write {
+        if read > write {
             self.size - read
         } else {
             write - read
-        }) as usize
+        }
     }
 
     fn read_pointers(&self) -> (usize, usize) {
@@ -221,11 +217,7 @@ impl RttWriter<'_> {
             }
 
             unsafe {
-                ptr::copy_nonoverlapping(
-                    buf.as_ptr(),
-                    self.chan.buffer.offset(self.write as isize),
-                    count,
-                );
+                ptr::copy_nonoverlapping(buf.as_ptr(), self.chan.buffer.add(self.write), count);
             }
 
             self.write += count;
@@ -244,13 +236,13 @@ impl RttWriter<'_> {
     fn writable_contiguous(&self) -> usize {
         let read = self.chan.read_pointers().1;
 
-        (if read > self.write {
+        if read > self.write {
             read - self.write - 1
         } else if read == 0 {
             self.chan.size - self.write - 1
         } else {
             self.chan.size - self.write
-        }) as usize
+        }
     }
 
     pub fn is_failed(&self) -> bool {
@@ -265,7 +257,7 @@ impl RttWriter<'_> {
 
     fn commit_impl(&mut self) {
         match self.state {
-            WriteState::Finished => return,
+            WriteState::Finished => (),
             WriteState::Full | WriteState::Writable => {
                 // Commit the write pointer so the host can see the new data
                 self.chan.write.store(self.write, SeqCst);

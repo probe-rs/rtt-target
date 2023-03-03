@@ -177,6 +177,7 @@ impl UpChannel {
         UpChannel(channel)
     }
 
+    #[allow(clippy::mut_from_ref)]
     fn channel(&self) -> &mut rtt::RttChannel {
         unsafe { &mut *self.0 }
     }
@@ -234,7 +235,7 @@ impl UpChannel {
             static mut CONTROL_BLOCK: MaybeUninit<rtt::RttHeader>;
         }
 
-        if number >= (&*CONTROL_BLOCK.as_ptr()).max_up_channels() {
+        if number >= (*CONTROL_BLOCK.as_ptr()).max_up_channels() {
             return None;
         }
 
@@ -242,7 +243,7 @@ impl UpChannel {
         // correct channel.
         let ptr = (CONTROL_BLOCK.as_ptr().add(1) as *mut rtt::RttChannel).add(number);
 
-        if !(&*ptr).is_initialized() {
+        if !(*ptr).is_initialized() {
             return None;
         }
 

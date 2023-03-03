@@ -18,7 +18,7 @@ pub fn set_print_channel(channel: UpChannel) {
 pub mod print_impl {
     use super::*;
 
-    fn with_writer<F: Fn(TerminalWriter) -> ()>(number: u8, f: F) {
+    fn with_writer<F: Fn(TerminalWriter)>(number: u8, f: F) {
         critical_section::with(|cs| {
             if let Some(term) = &mut *PRINT_TERMINAL.borrow_ref_mut(cs) {
                 f(term.write(number))
