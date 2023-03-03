@@ -1,10 +1,5 @@
 [workspace]
-members = [
-    "examples-cortex-m",
-    "rtt-target",
-    "panic-rtt-target",
-    "panic-test",
-]
+members = ["examples-cortex-m", "rtt-target", "panic-rtt-target", "panic-test"]
 
 [patch.crates-io]
 rtt-target = { path = "./rtt-target" }
