@@ -97,6 +97,46 @@ macro_rules! rprintln {
     };
 }
 
+/// Print to RTT and return the value of a given expression for quick debugging. This is equivalent
+/// to Rust's `std::dbg!()` macro.
+#[macro_export]
+macro_rules! rdbg {
+    (=> $terminal:expr) => {
+        $crate::rprintln!(=> $terminal, "[{}:{}]", ::core::file!(), ::core::line!())
+    };
+    (=> $terminal:expr, $val:expr $(,)?) => {
+        // Use of `match` here is intentional because it affects the lifetimes
+        // of temporaries - https://stackoverflow.com/a/48732525/1063961
+        match $val {
+            tmp => {
+                $crate::rprintln!(=> $terminal, "[{}:{}] {} = {:#?}",
+                    ::core::file!(), ::core::line!(), ::core::stringify!($val), &tmp);
+                tmp
+            }
+        }
+    };
+    (=> $terminal:expr, $($val:expr),+ $(,)?) => {
+        ($($crate::rdbg!(=> $terminal, $val)),+,)
+    };
+    () => {
+        $crate::rprintln!("[{}:{}]", ::core::file!(), ::core::line!())
+    };
+    ($val:expr $(,)?) => {
+        // Use of `match` here is intentional because it affects the lifetimes
+        // of temporaries - https://stackoverflow.com/a/48732525/1063961
+        match $val {
+            tmp => {
+                $crate::rprintln!("[{}:{}] {} = {:#?}",
+                    ::core::file!(), ::core::line!(), ::core::stringify!($val), &tmp);
+                tmp
+            }
+        }
+    };
+    ($($val:expr),+ $(,)?) => {
+        ($($crate::rdbg!($val)),+,)
+    };
+}
+
 /// Initializes RTT with a single up channel and sets it as the print channel for the printing
 /// macros.
 ///
