@@ -31,16 +31,12 @@ impl RttHeader {
 
         // Copy the ID in two parts to avoid having the ID string in memory in full. The ID is
         // copied last to make it less likely an unfinished control block is detected by the host.
+        const ID_LOWER: &[u8] = b"SEGG_";
+        const ID_UPPER: &[u8] = b"ER RTT\0\0\0\0\0\0";
 
-        ptr::copy_nonoverlapping(b"SEGG_" as *const u8, self.id.as_mut_ptr(), 5);
-
+        self.id[..ID_LOWER.len()].copy_from_slice(ID_LOWER);
         fence(SeqCst);
-
-        ptr::copy_nonoverlapping(
-            b"ER RTT\0\0\0\0\0\0" as *const u8,
-            self.id.as_mut_ptr().offset(4),
-            12,
-        );
+        self.id[ID_LOWER.len() - 1..].copy_from_slice(ID_UPPER);
     }
 
     pub fn max_up_channels(&self) -> usize {
@@ -80,12 +76,7 @@ impl RttChannel {
 
     pub(crate) fn mode(&self) -> ChannelMode {
         let mode = self.flags.load(SeqCst) & 3;
-
-        if mode <= 2 {
-            unsafe { core::mem::transmute(mode) }
-        } else {
-            ChannelMode::NoBlockSkip
-        }
+        mode.into()
     }
 
     pub(crate) fn set_mode(&self, mode: ChannelMode) {

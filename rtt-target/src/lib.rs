@@ -305,6 +305,17 @@ pub enum ChannelMode {
     BlockIfFull = 2,
 }
 
+impl From<usize> for ChannelMode {
+    fn from(value: usize) -> Self {
+        match value {
+            x if x == Self::NoBlockSkip as usize => Self::NoBlockSkip,
+            x if x == Self::NoBlockTrim as usize => Self::NoBlockTrim,
+            x if x == Self::BlockIfFull as usize => Self::BlockIfFull,
+            _ => Self::NoBlockSkip, // default value
+        }
+    }
+}
+
 /// An up channel that supports writing into multiple virtual terminals within the same buffer.
 ///
 /// An [`UpChannel`] can be turned into a `TerminalChannel` by using the
