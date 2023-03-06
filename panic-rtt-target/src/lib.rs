@@ -73,23 +73,24 @@ fn panic(info: &PanicInfo) -> ! {
 #[inline(never)]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    // use cortex_m::interrupt;
-
-    // interrupt::disable();
-
     critical_section::with(|_| {
         if let Some(mut channel) = unsafe { UpChannel::conjure(0) } {
             channel.set_mode(ChannelMode::BlockIfFull);
 
             writeln!(channel, "{}", info).ok();
+        } else {
+            loop {
+                compiler_fence(SeqCst);
+            }
         }
 
+        // we should never leave critical section
         loop {
             compiler_fence(SeqCst);
         }
     });
 
-    // will never be reached
+    // will in fact be unreachable
     loop {
         compiler_fence(SeqCst);
     }

@@ -221,25 +221,30 @@ impl UpChannel {
     /// It's undefined behavior for something else to access the channel through anything else
     /// besides the returned object during or after calling this function. Essentially this function
     /// is only safe to use in panic handlers and the like that permanently disable interrupts.
-    pub unsafe fn conjure(number: usize) -> Option<UpChannel> {
+    pub unsafe fn conjure(channel_number: usize) -> Option<UpChannel> {
         extern "C" {
             #[link_name = "_SEGGER_RTT"]
             static mut CONTROL_BLOCK: MaybeUninit<rtt::RttHeader>;
         }
+        let control_block_ptr = CONTROL_BLOCK.as_ptr();
 
-        if number >= (*CONTROL_BLOCK.as_ptr()).max_up_channels() {
+        let control_block = &*control_block_ptr;
+        let max_up_channels = control_block.max_up_channels();
+
+        if channel_number >= max_up_channels {
             return None;
         }
 
         // First addition moves to the start of the up channel array, second addition moves to the
         // correct channel.
-        let ptr = (CONTROL_BLOCK.as_ptr().add(1) as *mut rtt::RttChannel).add(number);
+        let rtt_channel =
+            &mut *(CONTROL_BLOCK.as_ptr().add(1) as *mut rtt::RttChannel).add(channel_number);
 
-        if !(*ptr).is_initialized() {
+        if !rtt_channel.is_initialized() {
             return None;
         }
 
-        Some(UpChannel(ptr))
+        Some(UpChannel(rtt_channel as *mut rtt::RttChannel))
     }
 }
 

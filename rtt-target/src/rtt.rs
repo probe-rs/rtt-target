@@ -29,18 +29,10 @@ impl RttHeader {
         ptr::write_volatile(&mut self.max_up_channels, max_up_channels);
         ptr::write_volatile(&mut self.max_down_channels, max_down_channels);
 
-        // Copy the ID in two parts to avoid having the ID string in memory in full. The ID is
-        // copied last to make it less likely an unfinished control block is detected by the host.
-
-        ptr::copy_nonoverlapping(b"SEGG_" as *const u8, self.id.as_mut_ptr(), 5);
-
+        // The ID is copied last to make it less likely an unfinished control block is detected by the host.
+        let s = b"SEGGER RTT\0\0\0\0\0\0";
+        ptr::copy_nonoverlapping(s as *const u8, self.id.as_mut_ptr(), s.len());
         fence(SeqCst);
-
-        ptr::copy_nonoverlapping(
-            b"ER RTT\0\0\0\0\0\0" as *const u8,
-            self.id.as_mut_ptr().offset(4),
-            12,
-        );
     }
 
     pub fn max_up_channels(&self) -> usize {
@@ -74,8 +66,9 @@ impl RttChannel {
         ptr::write_volatile(&mut self.buffer, buffer as *mut u8);
     }
 
+    /// True if buffer NOT pointing to null
     pub fn is_initialized(&self) -> bool {
-        self.buffer.is_null()
+        !self.buffer.is_null()
     }
 
     pub(crate) fn mode(&self) -> ChannelMode {
