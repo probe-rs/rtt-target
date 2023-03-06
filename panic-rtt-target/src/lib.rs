@@ -50,26 +50,6 @@ use core::{
 #[allow(unused)]
 use rtt_target::{ChannelMode, UpChannel};
 
-#[cfg(feature = "cortex-m")]
-#[inline(never)]
-#[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    use cortex_m::interrupt;
-
-    interrupt::disable();
-
-    if let Some(mut channel) = unsafe { UpChannel::conjure(0) } {
-        channel.set_mode(ChannelMode::BlockIfFull);
-
-        writeln!(channel, "{}", info).ok();
-    }
-
-    loop {
-        compiler_fence(SeqCst);
-    }
-}
-
-#[cfg(feature = "riscv")]
 #[inline(never)]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
@@ -79,6 +59,7 @@ fn panic(info: &PanicInfo) -> ! {
 
             writeln!(channel, "{}", info).ok();
         } else {
+            // failed to get channel, but not much else we can do but spin
             loop {
                 compiler_fence(SeqCst);
             }
@@ -95,11 +76,3 @@ fn panic(info: &PanicInfo) -> ! {
         compiler_fence(SeqCst);
     }
 }
-
-#[cfg(not(any(feature = "cortex-m", feature = "riscv")))]
-compile_error!(concat!(
-    "You must specify a platform feature for panic-rtt-target, such as 'cortex-m' or 'riscv'.\r\n",
-    "Example:\r\n",
-    "  # Cargo.toml\r\n",
-    "  panic-rtt-target = { version = \"x.y.z\", features = [\"cortex-m\"] }\r\n"
-));
