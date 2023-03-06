@@ -15,6 +15,13 @@ rtt-target = "0.4.0"
 
 # Platform specific stuff
 cortex-m = { version = "0.7.1", optional = true }
+# riscv = { verison = "0.10.1", optional = true }
+critical-section = "1.1.1"
+
+[features]
+cortex-m = ["dep:cortex-m"]
+#riscv = ["dep:riscv"]
+riscv = []
 
 [package.metadata.docs.rs]
-features = ["cortex-m"]
+features = ["cortex-m", "riscv"]
