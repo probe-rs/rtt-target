@@ -69,10 +69,5 @@ fn panic(info: &PanicInfo) -> ! {
         loop {
             compiler_fence(SeqCst);
         }
-    });
-
-    // will in fact be unreachable
-    loop {
-        compiler_fence(SeqCst);
-    }
+    })
 }
