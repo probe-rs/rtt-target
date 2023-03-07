@@ -30,8 +30,12 @@ impl RttHeader {
         ptr::write_volatile(&mut self.max_down_channels, max_down_channels);
 
         // The ID is copied last to make it less likely an unfinished control block is detected by the host.
-        let s = b"SEGGER RTT\0\0\0\0\0\0";
-        ptr::copy_nonoverlapping(s as *const u8, self.id.as_mut_ptr(), s.len());
+        // To avoid the host from misinterpreting the location of the RttHeader, we don't store it verbatim.
+        let s = b"_EGGER RTT\0\0\0\0\0\0";
+        ptr::write_volatile(&mut self.id, *s);
+        // Fix `S` as first character
+        ptr::write_volatile(&mut self.id[0], b'S');
+
         fence(SeqCst);
     }
 
