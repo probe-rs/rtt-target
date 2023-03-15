@@ -2,9 +2,9 @@
 name = "panic-test"
 version = "0.1.0"
 authors = ["Matti Virkkunen <mvirkkunen@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 cortex-m-rt = "0.7"
-panic-rtt-target = { path = "../panic-rtt-target", features = ["cortex-m"] }
+panic-rtt-target = { path = "../panic-rtt-target" }
 rtt-target = { path = "../rtt-target" }

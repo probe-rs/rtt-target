@@ -74,8 +74,9 @@ impl RttChannel {
         ptr::write_volatile(&mut self.buffer, buffer as *mut u8);
     }
 
+    /// Returns true on a non-null value of the (raw) buffer pointerh
     pub fn is_initialized(&self) -> bool {
-        self.buffer.is_null()
+        !self.buffer.is_null()
     }
 
     pub(crate) fn mode(&self) -> ChannelMode {
