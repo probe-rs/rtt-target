@@ -1,6 +1,6 @@
 # panic-rtt-target
 
-[![crates.io](https://meritbadge.herokuapp.com/panic-rtt-target)](https://crates.io/crates/panic-rtt-target) [![documentation](https://docs.rs/panic-rtt-target/badge.svg)](https://docs.rs/panic-rtt-target)
+[![crates.io](https://img.shields.io/crates/v/panic-rtt-target.svg)](https://crates.io/crates/panic-rtt-target) [![documentation](https://docs.rs/panic-rtt-target/badge.svg)](https://docs.rs/panic-rtt-target)
 
 Logs panic messages over RTT. A companion crate for rtt-target.
 
@@ -10,7 +10,7 @@ RTT must have been initialized by using one of the `rtt_init` macros. Otherwise 
 
 Panics are always logged on channel 0. Upon panicking the channel mode is also automatically set to `BlockIfFull`, so that the full message will always be logged. If the code somehow manages to panic at runtime before RTT is initialized (quite unlikely), or if channel 0 doesn't exist, nothing is logged. 
 
-The panic handler runs in a non-returning [critical_section](https://docs.rs/critical-section/latest/critical_section/) which implementation should be provided by the user. 
+The panic handler runs in a non-returning [critical_section](https://docs.rs/critical-section) which implementation should be provided by the user. 
 
 # Usage
 
