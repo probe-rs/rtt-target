@@ -2,19 +2,17 @@
 name = "panic-rtt-target"
 description = "Logs panic messages over RTT using rtt-target"
 version = "0.1.2"
-edition = "2018"
+edition = "2021"
 readme = "README.md"
 keywords = ["no-std", "embedded", "debugging", "rtt"]
 license = "MIT"
 license-file = "../LICENSE"
-authors = ["Matti Virkkunen <mvirkkunen@gmail.com>"]
+authors = [
+    "Matti Virkkunen <mvirkkunen@gmail.com>",
+    "Per Lindgren <per.lindgren@ltu.se>",
+]
 repository = "https://github.com/probe-rs/rtt-target"
 
 [dependencies]
 rtt-target = "0.4.0"
-
-# Platform specific stuff
-cortex-m = { version = "0.7.1", optional = true }
-
-[package.metadata.docs.rs]
-features = ["cortex-m"]
+critical-section = "1.1.1"
