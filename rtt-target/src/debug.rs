@@ -23,7 +23,6 @@ macro_rules! debug_rtt_init_default {
 /// The same as [`rtt_init_print`] macro but works only in debug
 ///
 /// [`rtt_init_print`](crate::rtt_init_print)
-#[cfg(any(feature = "cortex-m", feature = "riscv"))]
 #[macro_export]
 macro_rules! debug_rtt_init_print {
     ($($arg:tt)*) => (if cfg!(debug_assertions) { $crate::rtt_init_print!($($arg)*); })
