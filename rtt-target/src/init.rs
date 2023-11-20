@@ -17,7 +17,7 @@ macro_rules! rtt_init_channels {
     (
         $field:expr;
         $number:literal: {
-            size: $size:literal
+            size: $size:expr
             $( mode: $mode:ident )?
             $( name: $name:literal )?
         }
