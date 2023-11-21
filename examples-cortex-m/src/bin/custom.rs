@@ -4,26 +4,26 @@
 use core::fmt::Write;
 use cortex_m_rt::entry;
 use panic_halt as _;
-use rtt_target::rtt_init;
+use rtt_target::{rtt_init, ChannelMode::BlockIfFull};
 
 #[entry]
 fn main() -> ! {
     let channels = rtt_init! {
         up: {
             0: {
-                size: 512
-                mode: BlockIfFull
+                size: 512,
+                mode: BlockIfFull,
                 name: "Output zero"
             }
             1: {
-                size: 128
+                size: 128,
                 name: "Output one"
             }
         }
         down: {
             0: {
-                size: 512
-                mode: BlockIfFull
+                size: 512,
+                mode: BlockIfFull,
                 name: "Input zero"
             }
         }
