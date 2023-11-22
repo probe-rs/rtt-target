@@ -17,9 +17,10 @@ macro_rules! rtt_init_channels {
     (
         $field:expr;
         $number:literal: {
-            size: $size:literal
-            $( mode: $mode:ident )?
-            $( name: $name:literal )?
+            size: $size:expr
+            $(, mode: $mode:path )?
+            $(, name: $name:literal )?
+            $(,)?
         }
         $($tail:tt)*
     ) => {
@@ -27,7 +28,7 @@ macro_rules! rtt_init_channels {
         $( name = concat!($name, "\0").as_bytes().as_ptr(); )?
 
         let mut mode = $crate::ChannelMode::NoBlockSkip;
-        $( mode = $crate::ChannelMode::$mode; )?
+        $( mode = $mode; )?
 
         $field[$number].init(name, mode, {
             static mut _RTT_CHANNEL_BUFFER: MaybeUninit<[u8; $size]> = MaybeUninit::uninit();
@@ -67,8 +68,8 @@ macro_rules! rtt_init_wrappers {
 /// let channels = rtt_init! {
 ///     up: {
 ///         0: { // channel number
-///             size: 1024 // buffer size in bytes
-///             mode: NoBlockSkip // mode (optional, default: NoBlockSkip, see enum ChannelMode)
+///             size: 1024, // buffer size in bytes
+///             mode: NoBlockSkip, // mode (optional, default: NoBlockSkip, see enum ChannelMode)
 ///             name: "Terminal" // name (optional, default: no name)
 ///         }
 ///         1: {
@@ -77,7 +78,7 @@ macro_rules! rtt_init_wrappers {
 ///     }
 ///     down: {
 ///         0: {
-///             size: 16
+///             size: 16,
 ///             name: "Terminal"
 ///         }
 ///     }
@@ -171,13 +172,13 @@ macro_rules! rtt_init {
 /// rtt_init! {
 ///     up: {
 ///         0: {
-///             size: 1024
+///             size: 1024,
 ///             name: "Terminal"
 ///         }
 ///     }
 ///     down: {
 ///         0: {
-///             size: 16
+///             size: 16,
 ///             name: "Terminal"
 ///         }
 ///     }
@@ -191,13 +192,13 @@ macro_rules! rtt_init_default {
         $crate::rtt_init! {
             up: {
                 0: {
-                    size: 1024
+                    size: 1024,
                     name: "Terminal"
                 }
             }
             down: {
                 0: {
-                    size: 16
+                    size: 16,
                     name: "Terminal"
                 }
             }
