@@ -20,6 +20,7 @@ macro_rules! rtt_init_channels {
             size: $size:expr
             $(, mode: $mode:path )?
             $(, name: $name:literal )?
+            $(,)?
         }
         $($tail:tt)*
     ) => {
