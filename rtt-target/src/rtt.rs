@@ -146,7 +146,7 @@ impl RttChannel {
         }
     }
 
-    fn read_pointers(&self) -> (usize, usize) {
+    pub(crate) fn read_pointers(&self) -> (usize, usize) {
         let write = self.write.load(SeqCst);
         let read = self.read.load(SeqCst);
 

@@ -241,6 +241,20 @@ impl UpChannel {
 
         Some(UpChannel(ptr))
     }
+
+    /// Wait until all data has been read by the debugger.
+    ///
+    /// *Note: This means that if no debugger is connected or if it isn't reading the rtt data,*
+    /// *this function will wait indefinitely.*
+    pub fn flush(&self) {
+        loop {
+            let (write, read) = self.channel().read_pointers();
+            if write == read {
+                break;
+            }
+            core::hint::spin_loop();
+        }
+    }
 }
 
 impl fmt::Write for UpChannel {
