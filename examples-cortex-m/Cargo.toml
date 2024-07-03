@@ -4,12 +4,16 @@ version = "0.1.0"
 authors = ["Matti Virkkunen <mvirkkunen@gmail.com>"]
 edition = "2018"
 
+[features]
+defmt = ["dep:defmt", "rtt-target/defmt"]
+
 [dependencies]
 cortex-m = { version = "0.7.6", features = ["critical-section-single-core"] }
 cortex-m-rt = "0.7"
 panic-halt = "0.2.0"
 rtt-target = { path = "../rtt-target" }
 ufmt = "0.2.0"
+defmt = { version = "0.3.0", optional = true }
 
 [[bin]]
 name = "custom"
@@ -19,3 +23,7 @@ name = "print"
 
 [[bin]]
 name = "ufmt"
+
+[[bin]]
+name = "defmt"
+required-features = ["defmt"]
