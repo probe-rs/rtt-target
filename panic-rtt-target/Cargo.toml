@@ -1,12 +1,11 @@
 [package]
 name = "panic-rtt-target"
 description = "Logs panic messages over RTT using rtt-target"
-version = "0.1.3"
+version = "0.2.0"
 edition = "2021"
 readme = "README.md"
 keywords = ["no-std", "embedded", "debugging", "rtt"]
 license = "MIT"
-license-file = "../LICENSE"
 authors = [
     "Matti Virkkunen <mvirkkunen@gmail.com>",
     "Per Lindgren <per.lindgren@ltu.se>",
@@ -14,5 +13,6 @@ authors = [
 repository = "https://github.com/probe-rs/rtt-target"
 
 [dependencies]
-rtt-target = "0.5.0"
+rtt-target = {version = "0.6.0", path = "../rtt-target" }
 critical-section = "1.1.1"
+portable-atomic = { version = "1.6.0", default-features = false }

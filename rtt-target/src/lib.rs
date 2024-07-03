@@ -9,8 +9,7 @@
 //!
 //! This crate is platform agnostic and can be used on any chip that supports background memory
 //! access via its debug interface. The printing macros require a critical section which is
-//! platform-dependent. Built-in ARM Cortex-M support can be enabled with the "cortex-m" feature,
-//! and RISC-V support can be enabled with the "riscv" feature.
+//! platform-dependent.
 //!
 //! To interface with RTT from the host computer, a debug probe such as an ST-Link or J-Link is
 //! required. The normal debug protocol (e.g. SWD) is used to access RTT, so no extra connections
@@ -61,13 +60,24 @@
 //! needed when debugging. That way you will never end up with an application that freezes without a
 //! debugger connected.
 //!
+//! # Defmt integration
+//!
+//! The `defmt` crate can be used to format messages in a way that is more efficient and more
+//! informative than the standard `format!` macros. To use `defmt` with RTT, the `defmt` feature
+//! must be enabled, and the channel must be set up with [`set_defmt_channel`].
+//!
+//! ```toml
+//! [dependencies]
+//! defmt = { version = "0.3" }
+//! rtt-target = { version = "0.6", features = ["defmt"] }
+//! ```
+//!
 //! # Printing
 //!
 //! For no-hassle output the [`rprint`] and [`rprintln`] macros are provided. They use a single down
 //! channel defined at initialization time, and a critical section for synchronization, and they
 //! therefore work exactly like the standard `println` style macros. They can be used from any
 //! context. The [`rtt_init_print`] convenience macro initializes printing on channel 0.
-//!
 //!
 //! ```
 //! use rtt_target::{rtt_init_print, rprintln};
@@ -79,14 +89,13 @@
 //!     }
 //! }
 //! ```
-//! # Debug
 //!
 //! To use rtt functionality only in debug builds use macros prefixed with `debug_*`. They have
 //! exactly the same functionality as without debug - the only difference is that they are removed
-//! when built with `--release`. It's save to use [`debug_rprintln`] and [`debug_rprint`] even if
+//! when built with `--release`. It's safe to use [`debug_rprintln`] and [`debug_rprint`] even if
 //! rtt was initialized with [`rtt_init`] instead of [`debug_rtt_init`].
 //!
-//! Under the hood this uses the [`debug-assertions`] flag. Set this flag to true to include all debug
+//! Under the hood this uses the [debug-assertions] flag. Set this flag to true to include all debug
 //! macros also in release mode.
 //!
 //! [debug-assertions]: https://doc.rust-lang.org/cargo/reference/profiles.html#debug-assertions
@@ -106,6 +115,11 @@
 //!
 //! Please note that because a critical section is used, printing into a blocking channel will cause
 //! the application to block and freeze when the buffer is full.
+//!
+//! `rtt-target` also supports initializing multiple RTT channels, and even has a logger
+//! implementation for [`defmt`](::defmt) that can be used in conjunction with arbitrary channel setups.
+//! The `defmt` integration requires setting `features = ["defmt"]`, and the used channel needs
+//! to be manually configured with [`set_defmt_channel`].
 //!
 //! # Reading
 //!
@@ -136,20 +150,22 @@ use core::fmt;
 use core::mem::MaybeUninit;
 use ufmt_write::uWrite;
 
-#[macro_use]
-mod init;
-
 #[doc(hidden)]
 /// Public due to access from macro
 pub mod debug;
+#[cfg(feature = "defmt")]
+mod defmt;
 /// Public due to access from macro
 #[doc(hidden)]
 pub mod rtt;
 
-#[macro_use]
+mod init;
 mod print;
 
 pub use print::*;
+
+#[cfg(feature = "defmt")]
+pub use defmt::set_defmt_channel;
 
 /// RTT up (target to host) channel
 ///
@@ -347,7 +363,9 @@ impl TerminalChannel {
     /// The correct way to use this method is to call it once for each write operation. This is so
     /// that non blocking modes will work correctly.
     ///
-    /// The writer supports formatted writing with the standard `write` and ufmt's `uwrite`.
+    /// The writer supports formatted writing with the standard [`Write`] and [`ufmt_write::uWrite`].
+    ///
+    /// [`Write`]: fmt::Write
     pub fn write(&mut self, number: u8) -> TerminalWriter {
         const TERMINAL_ID: [u8; 16] = *b"0123456789ABCDEF";
 

@@ -27,6 +27,13 @@ fn main() {
 }
 ```
 
+`rtt-target` also supports initializing multiple RTT channels, and even has a logger implementation
+for [`defmt`](https://defmt.ferrous-systems.com/) that can be used in conjunction with arbitrary
+channel setups. The `defmt` integration requires setting `features = ["defmt"]`, and the used
+channel needs to be manually configured with `set_defmt_channel`.
+
+For more information, please check out the [documentation](https://docs.rs/rtt-target).
+
 ## Development
 
 The examples-cortex-m and panic-test crates come with build files for the venerable STM32F103C8xx by default, but can be easily adapted for any chip as they contain only minimal platform-specific runtime code to get `fn main` to run.

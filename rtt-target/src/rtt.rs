@@ -6,7 +6,7 @@ use crate::ChannelMode;
 use core::cmp::min;
 use core::fmt;
 use core::ptr;
-use core::sync::atomic::{fence, AtomicUsize, Ordering::SeqCst};
+use portable_atomic::{fence, AtomicUsize, Ordering::SeqCst};
 
 // Note: this is zero-initialized in the initialization macro so all zeros must be a valid value
 #[repr(C)]
@@ -74,7 +74,7 @@ impl RttChannel {
         ptr::write_volatile(&mut self.buffer, buffer as *mut u8);
     }
 
-    /// Returns true on a non-null value of the (raw) buffer pointerh
+    /// Returns true on a non-null value of the (raw) buffer pointer
     pub fn is_initialized(&self) -> bool {
         !self.buffer.is_null()
     }
@@ -82,10 +82,11 @@ impl RttChannel {
     pub(crate) fn mode(&self) -> ChannelMode {
         let mode = self.flags.load(SeqCst) & 3;
 
-        if mode <= 2 {
-            unsafe { core::mem::transmute(mode) }
-        } else {
-            ChannelMode::NoBlockSkip
+        match mode {
+            0 => ChannelMode::NoBlockSkip,
+            1 => ChannelMode::NoBlockTrim,
+            2 => ChannelMode::BlockIfFull,
+            _ => ChannelMode::NoBlockSkip,
         }
     }
 
