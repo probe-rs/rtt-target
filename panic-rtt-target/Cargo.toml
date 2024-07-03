@@ -13,6 +13,6 @@ authors = [
 repository = "https://github.com/probe-rs/rtt-target"
 
 [dependencies]
-rtt-target = "0.5.0"
+rtt-target = {version = "0.6.0", path = "../rtt-target" }
 critical-section = "1.1.1"
 portable-atomic = { version = "1.6.0", default-features = false }
