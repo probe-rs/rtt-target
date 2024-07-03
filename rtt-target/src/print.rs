@@ -18,7 +18,7 @@ pub fn set_print_channel(channel: UpChannel) {
     });
 }
 
-/// Allows working with the currently set print channel.
+/// Allows accessing the currently set print channel.
 pub fn with_terminal_channel<F: Fn(&mut TerminalChannel)>(f: F) {
     critical_section::with(|cs| {
         if let Some(term) = &mut *PRINT_TERMINAL.borrow_ref_mut(cs) {

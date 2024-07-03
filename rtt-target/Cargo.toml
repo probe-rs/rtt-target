@@ -16,3 +16,5 @@ default = []
 ufmt-write = "0.1.0"
 critical-section = "1.0.0"
 portable-atomic = { version = "1.6.0", default-features = false }
+
+defmt = { version = "0.3.0", optional = true }

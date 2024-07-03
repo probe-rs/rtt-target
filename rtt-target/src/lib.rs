@@ -67,7 +67,6 @@
 //! therefore work exactly like the standard `println` style macros. They can be used from any
 //! context. The [`rtt_init_print`] convenience macro initializes printing on channel 0.
 //!
-//!
 //! ```
 //! use rtt_target::{rtt_init_print, rprintln};
 //!
@@ -78,7 +77,6 @@
 //!     }
 //! }
 //! ```
-//! # Debug
 //!
 //! To use rtt functionality only in debug builds use macros prefixed with `debug_*`. They have
 //! exactly the same functionality as without debug - the only difference is that they are removed
@@ -135,20 +133,22 @@ use core::fmt;
 use core::mem::MaybeUninit;
 use ufmt_write::uWrite;
 
-#[macro_use]
-mod init;
-
 #[doc(hidden)]
 /// Public due to access from macro
 pub mod debug;
+#[cfg(feature = "defmt")]
+mod defmt;
 /// Public due to access from macro
 #[doc(hidden)]
 pub mod rtt;
 
-#[macro_use]
+mod init;
 mod print;
 
 pub use print::*;
+
+#[cfg(feature = "defmt")]
+pub use defmt::set_defmt_channel;
 
 /// RTT up (target to host) channel
 ///
