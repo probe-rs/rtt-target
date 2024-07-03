@@ -60,6 +60,18 @@
 //! needed when debugging. That way you will never end up with an application that freezes without a
 //! debugger connected.
 //!
+//! # Defmt integration
+//!
+//! The `defmt` crate can be used to format messages in a way that is more efficient and more
+//! informative than the standard `format!` macros. To use `defmt` with RTT, the `defmt` feature
+//! must be enabled, and the channel must be set up with [`set_defmt_channel`].
+//!
+//! ```toml
+//! [dependencies]
+//! defmt = { version = "0.3" }
+//! rtt-target = { version = "0.6", features = ["defmt"] }
+//! ```
+//!
 //! # Printing
 //!
 //! For no-hassle output the [`rprint`] and [`rprintln`] macros are provided. They use a single down
@@ -80,7 +92,7 @@
 //!
 //! To use rtt functionality only in debug builds use macros prefixed with `debug_*`. They have
 //! exactly the same functionality as without debug - the only difference is that they are removed
-//! when built with `--release`. It's save to use [`debug_rprintln`] and [`debug_rprint`] even if
+//! when built with `--release`. It's safe to use [`debug_rprintln`] and [`debug_rprint`] even if
 //! rtt was initialized with [`rtt_init`] instead of [`debug_rtt_init`].
 //!
 //! Under the hood this uses the [debug-assertions] flag. Set this flag to true to include all debug
@@ -103,6 +115,13 @@
 //!
 //! Please note that because a critical section is used, printing into a blocking channel will cause
 //! the application to block and freeze when the buffer is full.
+//!
+//! `rtt-target` also supports initializing multiple RTT channels, and even has a logger
+//! implementation for [`defmt`] that can be used in conjunction with arbitrary channel setups.
+//! The `defmt` integration requires setting `features = ["defmt"]`, and the used channel needs
+//! to be manually configured with [`set_defmt_channel`].
+//!
+//! [`defmt`]: ::defmt
 //!
 //! # Reading
 //!
