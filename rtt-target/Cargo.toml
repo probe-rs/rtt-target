@@ -6,10 +6,13 @@ edition = "2018"
 readme = "../README.md"
 keywords = ["no-std", "embedded", "debugging", "rtt"]
 license = "MIT"
-license-file = "../LICENSE"
 authors = ["Matti Virkkunen <mvirkkunen@gmail.com>"]
 repository = "https://github.com/probe-rs/rtt-target"
+
+[features]
+default = []
 
 [dependencies]
 ufmt-write = "0.1.0"
 critical-section = "1.0.0"
+portable-atomic = { version = "1.6.0", default-features = false }

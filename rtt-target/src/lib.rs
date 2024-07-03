@@ -347,7 +347,9 @@ impl TerminalChannel {
     /// The correct way to use this method is to call it once for each write operation. This is so
     /// that non blocking modes will work correctly.
     ///
-    /// The writer supports formatted writing with the standard `write` and ufmt's `uwrite`.
+    /// The writer supports formatted writing with the standard [`Write`] and [`ufmt_write::uWrite`].
+    ///
+    /// [`Write`]: fmt::Write
     pub fn write(&mut self, number: u8) -> TerminalWriter {
         const TERMINAL_ID: [u8; 16] = *b"0123456789ABCDEF";
 

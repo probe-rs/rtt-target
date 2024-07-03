@@ -6,7 +6,6 @@ edition = "2021"
 readme = "README.md"
 keywords = ["no-std", "embedded", "debugging", "rtt"]
 license = "MIT"
-license-file = "../LICENSE"
 authors = [
     "Matti Virkkunen <mvirkkunen@gmail.com>",
     "Per Lindgren <per.lindgren@ltu.se>",
@@ -16,3 +15,4 @@ repository = "https://github.com/probe-rs/rtt-target"
 [dependencies]
 rtt-target = "0.5.0"
 critical-section = "1.1.1"
+portable-atomic = { version = "1.6.0", default-features = false }

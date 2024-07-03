@@ -37,37 +37,25 @@
 
 #![no_std]
 
-// allow(unused) is used so that warnings when no platform feature is defined don't drown out the
-// compile_error
+use core::{fmt::Write, panic::PanicInfo};
+use portable_atomic::{compiler_fence, Ordering};
 
-#[allow(unused)]
-use core::{
-    fmt::Write,
-    panic::PanicInfo,
-    sync::atomic::{compiler_fence, Ordering::SeqCst},
-};
-
-#[allow(unused)]
-use rtt_target::{ChannelMode, UpChannel};
+use rtt_target::{with_terminal_channel, ChannelMode};
 
 #[inline(never)]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     critical_section::with(|_| {
-        if let Some(mut channel) = unsafe { UpChannel::conjure(0) } {
-            channel.set_mode(ChannelMode::BlockIfFull);
+        with_terminal_channel(|term| {
+            term.set_mode(ChannelMode::BlockIfFull);
+            let mut channel = term.write(0);
 
             writeln!(channel, "{}", info).ok();
-        } else {
-            // failed to get channel, but not much else we can do but spin
-            loop {
-                compiler_fence(SeqCst);
-            }
-        }
+        });
 
         // we should never leave critical section
         loop {
-            compiler_fence(SeqCst);
+            compiler_fence(Ordering::SeqCst);
         }
     })
 }
