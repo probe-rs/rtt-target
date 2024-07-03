@@ -9,8 +9,7 @@
 //!
 //! This crate is platform agnostic and can be used on any chip that supports background memory
 //! access via its debug interface. The printing macros require a critical section which is
-//! platform-dependent. Built-in ARM Cortex-M support can be enabled with the "cortex-m" feature,
-//! and RISC-V support can be enabled with the "riscv" feature.
+//! platform-dependent.
 //!
 //! To interface with RTT from the host computer, a debug probe such as an ST-Link or J-Link is
 //! required. The normal debug protocol (e.g. SWD) is used to access RTT, so no extra connections
@@ -86,7 +85,7 @@
 //! when built with `--release`. It's save to use [`debug_rprintln`] and [`debug_rprint`] even if
 //! rtt was initialized with [`rtt_init`] instead of [`debug_rtt_init`].
 //!
-//! Under the hood this uses the [`debug-assertions`] flag. Set this flag to true to include all debug
+//! Under the hood this uses the [debug-assertions] flag. Set this flag to true to include all debug
 //! macros also in release mode.
 //!
 //! [debug-assertions]: https://doc.rust-lang.org/cargo/reference/profiles.html#debug-assertions
