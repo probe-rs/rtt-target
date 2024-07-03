@@ -117,11 +117,9 @@
 //! the application to block and freeze when the buffer is full.
 //!
 //! `rtt-target` also supports initializing multiple RTT channels, and even has a logger
-//! implementation for [`defmt`] that can be used in conjunction with arbitrary channel setups.
+//! implementation for [`defmt`](::defmt) that can be used in conjunction with arbitrary channel setups.
 //! The `defmt` integration requires setting `features = ["defmt"]`, and the used channel needs
 //! to be manually configured with [`set_defmt_channel`].
-//!
-//! [`defmt`]: ::defmt
 //!
 //! # Reading
 //!
