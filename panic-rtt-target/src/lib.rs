@@ -16,7 +16,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! panic-rtt-target = { version = "x.y.z", features = ["cortex-m"] }
+//! panic-rtt-target = { version = "x.y.z" }
 //! ```
 //!
 //! main.rs:
