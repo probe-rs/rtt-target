@@ -258,14 +258,19 @@ impl UpChannel {
         Some(UpChannel(ptr))
     }
 
+    /// Returns true if the channel is empty.
+    pub fn is_empty(&self) -> bool {
+        let (write, read) = self.channel().read_pointers();
+        write == read
+    }
+
     /// Wait until all data has been read by the debugger.
     ///
     /// *Note: This means that if no debugger is connected or if it isn't reading the rtt data,*
     /// *this function will wait indefinitely.*
     pub fn flush(&self) {
         loop {
-            let (write, read) = self.channel().read_pointers();
-            if write == read {
+            if self.is_empty() {
                 break;
             }
             core::hint::spin_loop();
@@ -400,6 +405,19 @@ impl TerminalChannel {
     /// Sets the blocking mode of the channel
     pub fn set_mode(&mut self, mode: ChannelMode) {
         self.channel.set_mode(mode)
+    }
+
+    /// Returns true if the channel is empty.
+    pub fn is_empty(&self) -> bool {
+        self.channel.is_empty()
+    }
+
+    /// Wait until all data has been read by the debugger.
+    ///
+    /// *Note: This means that if no debugger is connected or if it isn't reading the rtt data,*
+    /// *this function will wait indefinitely.*
+    pub fn flush(&self) {
+        self.channel.flush();
     }
 }
 
