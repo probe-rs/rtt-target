@@ -3,8 +3,9 @@
 //! RTT must have been initialized by using one of the `rtt_init` macros. Otherwise you will get a
 //! linker error at compile time.
 //!
-//! Panics are always logged to the print channel. Upon panicking the channel mode is also
-//! automatically set to `BlockIfFull`, so that the full message will always be logged.
+//! Panics are always logged to the print and defmt channels, if they are configured. Upon panicking
+//! the channel mode is also automatically set to `BlockIfFull`, so that the full message will
+//! always be logged.
 //! If the code somehow manages to panic at runtime before RTT is initialized (quite unlikely),
 //! or if the print channel doesn't exist, nothing is logged.
 //!
@@ -48,6 +49,9 @@ use rtt_target::{with_terminal_channel, ChannelMode};
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     critical_section::with(|_| {
+        #[cfg(feature = "defmt")]
+        defmt::error!("{}", defmt::Display2Format(info));
+
         with_terminal_channel(|term| {
             term.set_mode(ChannelMode::BlockIfFull);
             let mut channel = term.write(0);
