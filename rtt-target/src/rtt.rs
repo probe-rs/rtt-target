@@ -6,7 +6,7 @@ use crate::ChannelMode;
 use core::cmp::min;
 use core::fmt;
 use core::ptr;
-use portable_atomic::{fence, AtomicUsize, Ordering::SeqCst};
+use portable_atomic::{AtomicUsize, Ordering::SeqCst};
 
 // Note: this is zero-initialized in the initialization macro so all zeros must be a valid value
 #[repr(C)]
