@@ -438,3 +438,10 @@ impl Drop for TerminalWriter<'_> {
         }
     }
 }
+
+/// Used to reexport items for use in macros. Do not use directly.
+/// Not covered by semver guarantees.
+#[doc(hidden)]
+pub mod export {
+    pub use critical_section;
+}

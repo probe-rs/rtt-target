@@ -8,7 +8,7 @@ Target side implementation of the RTT (Real-Time Transfer) I/O protocol. RTT imp
 
 ## Platform support
 
-To use the global `rprintln!` macro or the defmt implementation, a platform-specific [`critical-section`](https://github.com/rust-embedded/critical-section) implementation is needed for locking.
+A platform-specific [`critical-section`](https://github.com/rust-embedded/critical-section) implementation is needed to use this library.
 
 Output directly to a channel object with `write!` or the binary `write` method does not require locking and therefore does not need any platform-specific critical section.
 
