@@ -3,20 +3,11 @@
 
 use cortex_m_rt::entry;
 use panic_halt as _;
-use rtt_target::rtt_init;
+use rtt_target::rtt_init_defmt;
 
 #[entry]
 fn main() -> ! {
-    let channels = rtt_init! {
-        up: {
-            0: {
-                size: 1024,
-                name: "defmt"
-            }
-        }
-    };
-
-    rtt_target::set_defmt_channel(channels.up.0);
+    rtt_init_defmt!();
 
     let mut i = 0;
     loop {

@@ -30,7 +30,7 @@
 //! use rtt_target::rtt_init_default;
 //!
 //! fn main() -> ! {
-//!     // you can use `rtt_init_print` or you can call `set_print_channel` after initialization.
+//!     // you can use `rtt_init_print`, `rtt_init_defmt` or you can call `set_print_channel` after initialization.
 //!     rtt_init_default!();
 //!
 //!     panic!("Something has gone terribly wrong");

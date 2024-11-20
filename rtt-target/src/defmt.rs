@@ -65,3 +65,36 @@ fn do_write(bytes: &[u8]) {
         }
     }
 }
+
+/// Initializes RTT with a single up channel and sets it as the defmt channel for the printing
+/// macros.
+///
+/// The optional arguments specify the blocking mode (default: `NoBlockSkip`) and size of the buffer
+/// in bytes (default: 1024). See [`rtt_init`] for more details.
+///
+/// [`rtt_init`]: crate::rtt_init
+#[macro_export]
+macro_rules! rtt_init_defmt {
+    ($mode:path, $size:expr) => {
+        let channels = $crate::rtt_init! {
+            up: {
+                0: {
+                    size: $size,
+                    mode: $mode,
+                    name: "defmt"
+                }
+            }
+        };
+
+        $crate::set_defmt_channel(channels.up.0);
+    };
+
+    ($mode:path) => {
+        $crate::rtt_init_defmt!($mode, 1024);
+    };
+
+    () => {
+        use $crate::ChannelMode::NoBlockSkip;
+        $crate::rtt_init_defmt!(NoBlockSkip, 1024);
+    };
+}
