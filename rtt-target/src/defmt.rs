@@ -32,14 +32,18 @@ unsafe impl defmt::Logger for Logger {
         unsafe { CS_RESTORE = restore };
 
         // safety: accessing the `static mut` is OK because we have disabled interrupts.
-        unsafe { ENCODER.start_frame(do_write) }
+        unsafe {
+            let encoder = &mut *core::ptr::addr_of_mut!(ENCODER);
+            encoder.start_frame(do_write)
+        }
     }
 
     unsafe fn flush() {}
 
     unsafe fn release() {
         // safety: accessing the `static mut` is OK because we have acquired a critical section.
-        ENCODER.end_frame(do_write);
+        let encoder = &mut *core::ptr::addr_of_mut!(ENCODER);
+        encoder.end_frame(do_write);
 
         // safety: accessing the `static mut` is OK because we have acquired a critical section.
         TAKEN.store(false, Ordering::Relaxed);
@@ -53,7 +57,8 @@ unsafe impl defmt::Logger for Logger {
 
     unsafe fn write(bytes: &[u8]) {
         // safety: accessing the `static mut` is OK because we have disabled interrupts.
-        ENCODER.write(bytes, do_write);
+        let encoder = &mut *core::ptr::addr_of_mut!(ENCODER);
+        encoder.write(bytes, do_write);
     }
 }
 
