@@ -144,10 +144,10 @@
 //! ```
 
 #![no_std]
+#![cfg_attr(docsrs, feature(doc_cfg), feature(doc_auto_cfg))]
 
 use core::convert::Infallible;
 use core::fmt;
-use core::mem::MaybeUninit;
 use ufmt_write::uWrite;
 
 #[doc(hidden)]
@@ -234,22 +234,27 @@ impl UpChannel {
     ///
     /// # Safety
     ///
+    /// This function must only be called after `rtt_init` has been called.
+    ///
     /// It's undefined behavior for something else to access the channel through anything else
     /// besides the returned object during or after calling this function. Essentially this function
     /// is only safe to use in panic handlers and the like that permanently disable interrupts.
     pub unsafe fn conjure(number: usize) -> Option<UpChannel> {
         extern "C" {
             #[link_name = "_SEGGER_RTT"]
-            static mut CONTROL_BLOCK: MaybeUninit<rtt::RttHeader>;
+            static mut CONTROL_BLOCK: rtt::RttHeader;
         }
 
-        if number >= (*CONTROL_BLOCK.as_ptr()).max_up_channels() {
+        let control_block = core::ptr::addr_of_mut!(CONTROL_BLOCK);
+        if number >= (*control_block).max_up_channels() {
             return None;
         }
 
+        let channels = control_block.add(1).cast::<rtt::RttChannel>();
+
         // First addition moves to the start of the up channel array, second addition moves to the
         // correct channel.
-        let ptr = (CONTROL_BLOCK.as_ptr().add(1) as *mut rtt::RttChannel).add(number);
+        let ptr = channels.add(number);
 
         if !(*ptr).is_initialized() {
             return None;
@@ -451,4 +456,11 @@ impl Drop for TerminalWriter<'_> {
             *self.current = self.number;
         }
     }
+}
+
+/// Used to reexport items for use in macros. Do not use directly.
+/// Not covered by semver guarantees.
+#[doc(hidden)]
+pub mod export {
+    pub use critical_section;
 }

@@ -16,3 +16,12 @@ repository = "https://github.com/probe-rs/rtt-target"
 rtt-target = {version = "0.6.0", path = "../rtt-target" }
 critical-section = "1.1.1"
 portable-atomic = { version = "1.6.0", default-features = false }
+
+defmt = { version = "0.3.0", optional = true }
+
+[features]
+default = []
+defmt = ["dep:defmt"]
+
+[package.metadata.docs.rs]
+features = ["defmt"]

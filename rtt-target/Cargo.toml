@@ -18,3 +18,7 @@ critical-section = "1.0.0"
 portable-atomic = { version = "1.6.0", default-features = false }
 
 defmt = { version = "0.3.0", optional = true }
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

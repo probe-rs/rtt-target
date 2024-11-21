@@ -37,3 +37,10 @@ fn main() -> ! {
     panic!("Something has gone terribly wrong");
 }
 ```
+
+# Defmt support
+
+You can enable the `defmt` feature so that panics are printed to the defmt channel. If you do this
+and have configured both a print and a defmt channel, the panic message will be printed to both.
+The `defmt` feature doesn't automatically enable `rtt-target/defmt`. This allows you to use a
+different defmt backend if needed.
