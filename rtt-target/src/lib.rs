@@ -64,7 +64,8 @@
 //!
 //! The `defmt` crate can be used to format messages in a way that is more efficient and more
 //! informative than the standard `format!` macros. To use `defmt` with RTT, the `defmt` feature
-//! must be enabled, and the channel must be set up with [`set_defmt_channel`].
+//! must be enabled, and the channel must be set up with [`set_defmt_channel`] or you can use the
+//! [`rtt_init_defmt`] macro to initialize rtt and defmt at once.
 //!
 //! ```toml
 //! [dependencies]
@@ -72,7 +73,24 @@
 //! rtt-target = { version = "0.6", features = ["defmt"] }
 //! ```
 //!
-//! # Printing
+//! # Log integration
+//!
+//! Rtt-target also supports integration with the `log` crate. The `log` feature must be enabled to
+//! configure a logger that forwards log messages to RTT.
+//! The logger can be initialized with `rtt_init_log!`.
+//!
+//! ```
+//! use rtt_target::rtt_init_log;
+//!
+//! fn main() -> ! {
+//!    rtt_init_log!(); // Pass a log::LevelFilter as an argument to set the min log level different from Trace
+//!    loop {
+//!        log::info!("Hello, world!");
+//!    }
+//! }
+//! ```
+//!
+//! # Plain Printing
 //!
 //! For no-hassle output the [`rprint`] and [`rprintln`] macros are provided. They use a single down
 //! channel defined at initialization time, and a critical section for synchronization, and they
@@ -116,11 +134,6 @@
 //! Please note that because a critical section is used, printing into a blocking channel will cause
 //! the application to block and freeze when the buffer is full.
 //!
-//! `rtt-target` also supports initializing multiple RTT channels, and even has a logger
-//! implementation for [`defmt`](::defmt) that can be used in conjunction with arbitrary channel setups.
-//! The `defmt` integration requires setting `features = ["defmt"]`, and the used channel needs
-//! to be manually configured with [`set_defmt_channel`].
-//!
 //! # Reading
 //!
 //! The following example shows how to set up the RTT to read simple input sent from the host
@@ -155,6 +168,8 @@ use ufmt_write::uWrite;
 pub mod debug;
 #[cfg(feature = "defmt")]
 mod defmt;
+#[cfg(feature = "log")]
+mod log;
 /// Public due to access from macro
 #[doc(hidden)]
 pub mod rtt;
@@ -166,6 +181,9 @@ pub use print::*;
 
 #[cfg(feature = "defmt")]
 pub use defmt::set_defmt_channel;
+
+#[cfg(feature = "log")]
+pub use log::*;
 
 /// RTT up (target to host) channel
 ///

@@ -27,10 +27,15 @@ fn main() {
 }
 ```
 
-`rtt-target` also supports initializing multiple RTT channels, and even has a logger implementation
-for [`defmt`](https://defmt.ferrous-systems.com/) that can be used in conjunction with arbitrary
-channel setups. The `defmt` integration requires setting `features = ["defmt"]`, and the used
-channel needs to be manually configured with `set_defmt_channel`.
+`rtt-target` also supports initializing multiple RTT channels, and even has a logger implementations
+for [`log`](https://docs.rs/log/latest/log/) and [`defmt`](https://defmt.ferrous-systems.com/) that can be used in conjunction with arbitrary
+channel setups.
+
+The `defmt` integration requires setting `features = ["defmt"]`. Furthermore, you have to either invoke `rtt_init_defmt!` or set up your channel(s) manually and invoke `set_defmt_channel` before using `defmt`.
+
+The `log` integration requires setting `features = ["log"]`. Furthermore, you have to either invoke `rtt_init_log!` or set up your channel(s) manually and invoke `init_logger`/`init_logger_with_level` before using `log`.
+
+**Note**: For your platform, particularly if you're using a multi-core MCU, external logger implementations might be better suited than the one provided by this crate via the `log`/`defmt` feature.
 
 For more information, please check out the [documentation](https://docs.rs/rtt-target).
 
