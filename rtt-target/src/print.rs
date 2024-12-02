@@ -160,7 +160,7 @@ macro_rules! rdbg {
 /// [`rtt_init`]: crate::rtt_init
 #[macro_export]
 macro_rules! rtt_init_print {
-    ($mode:path, $size:expr) => {
+    ($mode:path, $size:expr) => {{
         let channels = $crate::rtt_init! {
             up: {
                 0: {
@@ -172,14 +172,14 @@ macro_rules! rtt_init_print {
         };
 
         $crate::set_print_channel(channels.up.0);
-    };
+    }};
 
     ($mode:path) => {
         $crate::rtt_init_print!($mode, 1024);
     };
 
-    () => {
+    () => {{
         use $crate::ChannelMode::NoBlockSkip;
         $crate::rtt_init_print!(NoBlockSkip, 1024);
-    };
+    }};
 }
