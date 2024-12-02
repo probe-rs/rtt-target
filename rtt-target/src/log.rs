@@ -88,10 +88,10 @@ unsafe fn init_racy(logger: &'static Logger) {
 /// [`rtt_init`]: crate::rtt_init
 #[macro_export]
 macro_rules! rtt_init_log {
-    ($level:path, $mode:path, $size:expr) => {
+    ($level:path, $mode:path, $size:expr) => {{
         $crate::rtt_init_print!($mode, $size);
         $crate::init_logger_with_level($level);
-    };
+    }};
 
     ($level:path, $mode:path) => {
         $crate::rtt_init_log!($level, $mode, 1024);
