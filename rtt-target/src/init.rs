@@ -20,6 +20,7 @@ macro_rules! rtt_init_channels {
             size: $size:expr
             $(, mode: $mode:path )?
             $(, name: $name:literal )?
+            $(, section: $section:literal )?
             $(,)?
         }
         $($tail:tt)*
@@ -31,6 +32,7 @@ macro_rules! rtt_init_channels {
         $( mode = $mode; )?
 
         $field[$number].init(name, mode, {
+            $( #[link_section = $section] )?
             static mut _RTT_CHANNEL_BUFFER: MaybeUninit<[u8; $size]> = MaybeUninit::uninit();
             _RTT_CHANNEL_BUFFER.as_mut_ptr()
         });
@@ -71,6 +73,7 @@ macro_rules! rtt_init_wrappers {
 ///             size: 1024, // buffer size in bytes
 ///             mode: NoBlockSkip, // mode (optional, default: NoBlockSkip, see enum ChannelMode)
 ///             name: "Terminal" // name (optional, default: no name)
+///             section: ".segger_term_buf" // Buffer linker section (optional, default: no section)
 ///         }
 ///         1: {
 ///             size: 32
@@ -82,6 +85,7 @@ macro_rules! rtt_init_wrappers {
 ///             name: "Terminal"
 ///         }
 ///     }
+///     section_cb: ".segger_rtt" // Control block linker section (optional, default: no section)
 /// };
 /// ```
 ///
@@ -118,6 +122,7 @@ macro_rules! rtt_init {
     {
         $(up: { $($up:tt)* } )?
         $(down: { $($down:tt)* } )?
+        $(section_cb: $section_cb:literal )?
     } => {{
         use core::mem::MaybeUninit;
         use core::ptr;
@@ -136,6 +141,7 @@ macro_rules! rtt_init {
         #[used]
         #[no_mangle]
         #[export_name = "_SEGGER_RTT"]
+        $( #[link_section = $section_cb] )?
         pub static mut CONTROL_BLOCK: MaybeUninit<RttControlBlock> = MaybeUninit::uninit();
 
         #[allow(unused)]
