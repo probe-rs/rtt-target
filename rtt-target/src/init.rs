@@ -72,7 +72,7 @@ macro_rules! rtt_init_wrappers {
 ///         0: { // channel number
 ///             size: 1024, // buffer size in bytes
 ///             mode: NoBlockSkip, // mode (optional, default: NoBlockSkip, see enum ChannelMode)
-///             name: "Terminal" // name (optional, default: no name)
+///             name: "Terminal", // name (optional, default: no name)
 ///             section: ".segger_term_buf" // Buffer linker section (optional, default: no section)
 ///         }
 ///         1: {
