@@ -63,7 +63,7 @@ impl RttChannel {
     /// The pointer arguments must point to a valid null-terminated name and writable buffer.
     pub unsafe fn init(&mut self, name: *const u8, mode: ChannelMode, buffer: *mut [u8]) {
         ptr::write_volatile(&mut self.name, name);
-        ptr::write_volatile(&mut self.size, (*buffer).len());
+        ptr::write_volatile(&mut self.size, (&(*buffer)).len());
         self.set_mode(mode);
 
         // Set buffer last as it can be used to detect if the channel has been initialized
