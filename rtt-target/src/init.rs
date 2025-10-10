@@ -86,11 +86,19 @@ macro_rules! rtt_init_wrappers {
 ///         }
 ///     }
 ///     section_cb: ".segger_rtt" // Control block linker section (optional, default: no section)
+///     max_up: 3 // max number of up channels (optional, default: declared channels only)
+///     max_down: 3 // max number of down channels (optional, default: declared channels only)
 /// };
 /// ```
 ///
 /// The channel numbers must start from 0 and not skip any numbers, or otherwise odd things will
 /// happen. The order of the channel parameters is fixed, but optional parameters can be left out.
+///
+/// If `max_up` or `max_down` is set to a number larger than the number of explicitly declared
+/// channels, then additional RTT channel header entries will be initialized without buffers. This
+/// allows applications or third-party crates (e.g. [`rtos-trace`][rtos_trace]) to allocate
+/// additional RTT buffers at runtime.
+///
 /// This macro should be called once within a function, preferably close to the start of your entry
 /// point. The macro must only be called once - if it's called twice in the same program a duplicate
 /// symbol error will occur.
@@ -117,12 +125,16 @@ macro_rules! rtt_init_wrappers {
 /// let mut output = channels.up.0;
 /// writeln!(output, "Hello, world!").ok();
 /// ```
+///
+/// [rtos_trace]: https://crates.io/crates/rtos-trace
 #[macro_export]
 macro_rules! rtt_init {
     {
         $(up: { $($up:tt)* } )?
         $(down: { $($down:tt)* } )?
         $(section_cb: $section_cb:literal )?
+        $(max_up: $max_up:literal )?
+        $(max_down: $max_down:literal )?
     } => {{
         use core::mem::MaybeUninit;
         use core::ptr;
@@ -131,11 +143,33 @@ macro_rules! rtt_init {
         use $crate::DownChannel;
         use $crate::rtt::*;
 
+        const NUM_UP_CHANNELS: usize = $crate::rtt_init_repeat!({ 1 + } { 0 }; $($($up)*)?);
+        const NUM_DOWN_CHANNELS: usize = $crate::rtt_init_repeat!({ 1 + } { 0 }; $($($down)*)?);
+
+        const MAX_UP_CHANNELS: usize = const {
+            const MAX_UP_CHANNELS: usize = 0 $( + $max_up )?;
+            if MAX_UP_CHANNELS == 0 {
+                NUM_UP_CHANNELS
+            } else {
+                assert!(MAX_UP_CHANNELS >= NUM_DOWN_CHANNELS, "max_up must be at least as large as the number of declared up channels");
+                MAX_UP_CHANNELS
+            }
+        };
+        const MAX_DOWN_CHANNELS: usize = const {
+            const MAX_DOWN_CHANNELS: usize = 0 $( + $max_down )?;
+            if MAX_DOWN_CHANNELS == 0 {
+                NUM_DOWN_CHANNELS
+            } else {
+                assert!(MAX_DOWN_CHANNELS >= NUM_DOWN_CHANNELS, "max_down must be at least as large as the number of declared down channels");
+                MAX_DOWN_CHANNELS
+            }
+        };
+
         #[repr(C)]
         pub struct RttControlBlock {
             header: RttHeader,
-            up_channels: [RttChannel; $crate::rtt_init_repeat!({ 1 + } { 0 }; $($($up)*)?)],
-            down_channels: [RttChannel; $crate::rtt_init_repeat!({ 1 + } { 0 }; $($($down)*)?)],
+            up_channels: [RttChannel; MAX_UP_CHANNELS],
+            down_channels: [RttChannel; MAX_DOWN_CHANNELS],
         }
 
         #[used]
@@ -169,7 +203,7 @@ macro_rules! rtt_init {
             // The header is initialized last to make it less likely an unfinished control block is
             // detected by the host.
 
-            cb.header.init(cb.up_channels.len(), cb.down_channels.len());
+            cb.header.init(MAX_UP_CHANNELS, MAX_DOWN_CHANNELS);
 
             pub struct Channels {
                 $( pub up: $crate::rtt_init_repeat!({ UpChannel, } {}; $($up)*), )?
