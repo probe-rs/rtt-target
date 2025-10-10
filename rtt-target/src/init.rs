@@ -17,25 +17,29 @@ macro_rules! rtt_init_channels {
     (
         $field:expr;
         $number:literal: {
-            size: $size:expr
-            $(, mode: $mode:path )?
-            $(, name: $name:literal )?
-            $(, section: $section:literal )?
-            $(,)?
+            $(
+                size: $size:expr
+                $(, mode: $mode:path )?
+                $(, name: $name:literal )?
+                $(, section: $section:literal )?
+                $(,)?
+            )?
         }
         $($tail:tt)*
     ) => {
-        let mut name: *const u8 = core::ptr::null();
-        $( name = concat!($name, "\0").as_bytes().as_ptr(); )?
+        $(
+            let mut name: *const u8 = core::ptr::null();
+            $( name = concat!($name, "\0").as_bytes().as_ptr(); )?
 
-        let mut mode = $crate::ChannelMode::NoBlockSkip;
-        $( mode = $mode; )?
+            let mut mode = $crate::ChannelMode::NoBlockSkip;
+            $( mode = $mode; )?
 
-        $field[$number].init(name, mode, {
-            $( #[link_section = $section] )?
-            static mut _RTT_CHANNEL_BUFFER: MaybeUninit<[u8; $size]> = MaybeUninit::uninit();
-            _RTT_CHANNEL_BUFFER.as_mut_ptr()
-        });
+            $field[$number].init(name, mode, {
+                $( #[link_section = $section] )?
+                static mut _RTT_CHANNEL_BUFFER: MaybeUninit<[u8; $size]> = MaybeUninit::uninit();
+                _RTT_CHANNEL_BUFFER.as_mut_ptr()
+            });
+        )?
 
         $crate::rtt_init_channels!($field; $($tail)*);
     };
@@ -64,6 +68,9 @@ macro_rules! rtt_init_wrappers {
 /// Initializes RTT with the specified channels. Channel numbers, buffer sizes and names can be
 /// defined.
 ///
+/// It is also possible to pre-allocate uninitialized channels to let crates accessing RTT via FFI
+/// play nicely with crates using rtt-target directly.
+///
 /// The syntax looks as follows (note that commas are not allowed anywhere):
 ///
 /// ```
@@ -78,6 +85,7 @@ macro_rules! rtt_init_wrappers {
 ///         1: {
 ///             size: 32
 ///         }
+///         2: { } // pre-allocated channel without buffer
 ///     }
 ///     down: {
 ///         0: {
@@ -91,6 +99,15 @@ macro_rules! rtt_init_wrappers {
 ///
 /// The channel numbers must start from 0 and not skip any numbers, or otherwise odd things will
 /// happen. The order of the channel parameters is fixed, but optional parameters can be left out.
+///
+/// If no size is given, then an RTT channel header entry will be allocated with its buffer pointer
+/// set to `null`. This allows third-party FFI crates (e.g. [`rtos-trace`][rtos_trace]/
+/// [`systemview-target`][systemview_target]) to identify and initialize the channel with its own
+/// name and buffer from C code.
+///
+/// Note: Rust crates should rely on channels initialized through `rtt_init!`. That's why this crate
+/// does not provide an API to initialize pre-allocated channels from Rust.
+///
 /// This macro should be called once within a function, preferably close to the start of your entry
 /// point. The macro must only be called once - if it's called twice in the same program a duplicate
 /// symbol error will occur.
@@ -117,6 +134,9 @@ macro_rules! rtt_init_wrappers {
 /// let mut output = channels.up.0;
 /// writeln!(output, "Hello, world!").ok();
 /// ```
+///
+/// [rtos_trace]: https://docs.rs/rtos-trace
+/// [systemview_target]: https://docs.rs/systemview-target/
 #[macro_export]
 macro_rules! rtt_init {
     {
