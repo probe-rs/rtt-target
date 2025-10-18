@@ -157,7 +157,7 @@
 //! ```
 
 #![no_std]
-#![cfg_attr(docsrs, feature(doc_cfg), feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 use core::convert::Infallible;
 use core::fmt;
