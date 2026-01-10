@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          # ARM Cortex-M targets
+          - thumbv6m-none-eabi # Cortex-M0, M0+
+          - thumbv7m-none-eabi # Cortex-M3
+          - thumbv7em-none-eabi # Cortex-M4, M7 (no FPU)
+          - thumbv7em-none-eabihf # Cortex-M4F, M7F (with FPU)
+          - thumbv8m.base-none-eabi # Cortex-M23
+          - thumbv8m.main-none-eabi # Cortex-M33, M35P (no FPU)
+          - thumbv8m.main-none-eabihf # Cortex-M33F, M35PF (with FPU)
+          # RISC-V targets
+          - riscv32i-unknown-none-elf # RV32I base
+          - riscv32imc-unknown-none-elf # RV32IMC (e.g., ESP32-C3)
+          - riscv32imac-unknown-none-elf # RV32IMAC
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Build rtt-target
+        run: cargo build -p rtt-target --target ${{ matrix.target }}
+
+      - name: Build rtt-target (all features)
+        run: cargo build -p rtt-target --target ${{ matrix.target }} --all-features
+
+      - name: Build panic-rtt-target
+        run: cargo build -p panic-rtt-target --target ${{ matrix.target }}
+
+      - name: Build panic-rtt-target (all features)
+        run: cargo build -p panic-rtt-target --target ${{ matrix.target }} --all-features
+
+  docs:
+    name: Test documentation builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Build rtt-target docs
+        run: cargo doc -p rtt-target --all-features --no-deps
+        env:
+          RUSTDOCFLAGS: "--cfg docsrs"
+
+      - name: Build panic-rtt-target docs
+        run: cargo doc -p panic-rtt-target --all-features --no-deps
+
+  format:
+    name: Check formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+  clippy:
+    name: Run Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+          targets: thumbv7em-none-eabihf
+
+      - name: Clippy rtt-target
+        run: cargo clippy -p rtt-target --target thumbv7em-none-eabihf --all-features -- -D warnings
+
+      - name: Clippy panic-rtt-target
+        run: cargo clippy -p panic-rtt-target --target thumbv7em-none-eabihf --all-features -- -D warnings
