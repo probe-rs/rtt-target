@@ -49,6 +49,33 @@ macro_rules! rtt_init_channels {
 /// rtt_init! implementation detail
 #[macro_export]
 #[doc(hidden)]
+macro_rules! rtt_init_channels_are_reusable {
+    (
+        $field:expr;
+        $number:literal: {
+            $(
+                size: $size:expr
+                $(, mode: $mode:path )?
+                $(, name: $name:literal )?
+                $(, section: $section:literal )?
+                $(,)?
+            )?
+        }
+        $($tail:tt)*
+    ) => {{
+        let mut reusable = true;
+        $(
+            reusable = $field[$number].is_initialized_with_size($size);
+        )?
+
+        reusable && $crate::rtt_init_channels_are_reusable!($field; $($tail)*)
+    }};
+    ($field:expr;) => { true };
+}
+
+/// rtt_init! implementation detail
+#[macro_export]
+#[doc(hidden)]
 macro_rules! rtt_init_wrappers {
     ($field:expr; $cons:path; { $($acc:tt)* }; $n:literal: { $($_:tt)* } $($tail:tt)*) => {
         $crate::rtt_init_wrappers!(
@@ -94,6 +121,7 @@ macro_rules! rtt_init_wrappers {
 ///         }
 ///     }
 ///     section_cb: ".segger_rtt" // Control block linker section (optional, default: no section)
+///     reuse_if_initialized: true // Reuse an already valid control block (optional, default: false)
 /// };
 /// ```
 ///
@@ -114,6 +142,13 @@ macro_rules! rtt_init_wrappers {
 ///
 /// At compile time the macro will statically reserve space for the RTT control block and the
 /// channel buffers. At runtime the macro fills in the structures and prepares them for use.
+///
+/// If `reuse_if_initialized: true` is specified, the macro first checks if the control block is
+/// already valid and matches the requested channel count. Configured channels with a buffer must
+/// also already be initialized with the requested size. If all checks pass, the existing control
+/// block is reused without resetting buffers or read/write pointers; otherwise the macro performs a
+/// normal full initialization. This is useful when consecutive firmware stages intentionally share
+/// the same RTT memory and must not desynchronize from an already attached host.
 ///
 /// The macro returns a generate struct that contains the channels. The struct for the example above
 /// would look as follows:
@@ -143,6 +178,7 @@ macro_rules! rtt_init {
         $(up: { $($up:tt)* } )?
         $(down: { $($down:tt)* } )?
         $(section_cb: $section_cb:literal )?
+        $(reuse_if_initialized: $reuse_if_initialized:literal )?
     } => {{
         use core::mem::MaybeUninit;
         use core::ptr;
@@ -179,17 +215,34 @@ macro_rules! rtt_init {
         });
 
         unsafe {
-            ptr::write_bytes(CONTROL_BLOCK.as_mut_ptr(), 0, 1);
+            let cb_ptr = CONTROL_BLOCK.as_mut_ptr();
+            let reuse_if_initialized = false $(|| $reuse_if_initialized)?;
 
-            let cb = &mut *CONTROL_BLOCK.as_mut_ptr();
+            let should_reuse = if reuse_if_initialized {
+                let cb = &mut *cb_ptr;
 
-            $( $crate::rtt_init_channels!(cb.up_channels; $($up)*); )?
-            $( $crate::rtt_init_channels!(cb.down_channels; $($down)*); )?
+                cb.header.is_valid(cb.up_channels.len(), cb.down_channels.len())
+                    $(&& $crate::rtt_init_channels_are_reusable!(cb.up_channels; $($up)*))?
+                    $(&& $crate::rtt_init_channels_are_reusable!(cb.down_channels; $($down)*))?
+            } else {
+                false
+            };
 
-            // The header is initialized last to make it less likely an unfinished control block is
-            // detected by the host.
+            if !should_reuse {
+                ptr::write_bytes(cb_ptr, 0, 1);
 
-            cb.header.init(cb.up_channels.len(), cb.down_channels.len());
+                let cb = &mut *cb_ptr;
+
+                $( $crate::rtt_init_channels!(cb.up_channels; $($up)*); )?
+                $( $crate::rtt_init_channels!(cb.down_channels; $($down)*); )?
+
+                // The header is initialized last to make it less likely an unfinished control block is
+                // detected by the host.
+
+                cb.header.init(cb.up_channels.len(), cb.down_channels.len());
+            }
+
+            let cb = &mut *cb_ptr;
 
             pub struct Channels {
                 $( pub up: $crate::rtt_init_repeat!({ UpChannel, } {}; $($up)*), )?

@@ -39,6 +39,26 @@ impl RttHeader {
         }
     }
 
+    pub fn is_valid(&self, max_up_channels: usize, max_down_channels: usize) -> bool {
+        if unsafe { ptr::read_volatile(&self.max_up_channels) } != max_up_channels as u32 {
+            return false;
+        }
+
+        if unsafe { ptr::read_volatile(&self.max_down_channels) } != max_down_channels as u32 {
+            return false;
+        }
+
+        const MAGIC_STR_BACKWARDS: &[u8; 16] = b"\0\0\0\0\0\0TTR REGGES";
+
+        for (idx, byte) in MAGIC_STR_BACKWARDS.iter().enumerate() {
+            if unsafe { ptr::read_volatile(&self.id[15 - idx]) } != *byte {
+                return false;
+            }
+        }
+
+        true
+    }
+
     pub fn max_up_channels(&self) -> usize {
         self.max_up_channels as usize
     }
@@ -72,7 +92,11 @@ impl RttChannel {
 
     /// Returns true on a non-null value of the (raw) buffer pointer
     pub fn is_initialized(&self) -> bool {
-        !self.buffer.is_null()
+        !unsafe { ptr::read_volatile(&self.buffer) }.is_null()
+    }
+
+    pub fn is_initialized_with_size(&self, size: usize) -> bool {
+        self.is_initialized() && unsafe { ptr::read_volatile(&self.size) } as usize == size
     }
 
     pub(crate) fn mode(&self) -> ChannelMode {
@@ -275,5 +299,55 @@ impl fmt::Write for RttWriter<'_> {
     fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
         self.write(s.as_bytes());
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use portable_atomic::AtomicU32;
+
+    #[test]
+    fn test_header_is_valid() {
+        let mut header = RttHeader {
+            id: [0; 16],
+            max_up_channels: 0,
+            max_down_channels: 0,
+        };
+
+        unsafe {
+            header.init(2, 1);
+        }
+
+        assert!(header.is_valid(2, 1));
+        assert!(!header.is_valid(1, 1));
+        assert!(!header.is_valid(2, 2));
+
+        header.id[0] = 0;
+        assert!(!header.is_valid(2, 1));
+    }
+
+    #[test]
+    fn test_channel_is_initialized_with_size() {
+        let mut buffer = [0; 16];
+        let mut channel = RttChannel {
+            name: ptr::null(),
+            buffer: ptr::null_mut(),
+            size: 0,
+            write: AtomicU32::new(0),
+            read: AtomicU32::new(0),
+            flags: AtomicU32::new(0),
+        };
+
+        unsafe {
+            channel.init(
+                ptr::null(),
+                ChannelMode::NoBlockSkip,
+                ptr::slice_from_raw_parts_mut(buffer.as_mut_ptr(), buffer.len()),
+            );
+        }
+
+        assert!(channel.is_initialized_with_size(16));
+        assert!(!channel.is_initialized_with_size(15));
     }
 }
