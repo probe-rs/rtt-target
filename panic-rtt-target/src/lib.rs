@@ -37,10 +37,23 @@
 //!     panic!("Something has gone terribly wrong");
 //! }
 //! ```
+//!
+//! # Semihosting exit (optional)
+//!
+//! Enable the `semihosting-exit` feature to issue a semihosting exit after the panic message is
+//! written. This is useful under QEMU and host debug agents that implement ARM/RISC-V semihosting,
+//! so the process terminates instead of spinning forever after a panic:
+//!
+//! ```toml
+//! panic-rtt-target = { version = "x.y.z", features = ["semihosting-exit"] }
+//! ```
+//!
+//! Only enable this when a semihosting-capable debugger or emulator is attached.
 
 #![no_std]
 
 use core::{fmt::Write, panic::PanicInfo};
+#[cfg(not(feature = "semihosting-exit"))]
 use portable_atomic::{compiler_fence, Ordering};
 
 use rtt_target::{with_terminal_channel, ChannelMode};
@@ -59,7 +72,16 @@ fn panic(info: &PanicInfo) -> ! {
             writeln!(channel, "{}", info).ok();
         });
 
-        // we should never leave critical section
+        // Optional: terminate the host session via semihosting after RTT flush path above.
+        // The semihosting crate's process::exit does not return on supported hosts.
+        #[cfg(feature = "semihosting-exit")]
+        {
+            // Failure code 1 — non-zero so CI/QEMU treat panic as a failed run.
+            semihosting::process::exit(1);
+        }
+
+        // Default: never leave the critical section (spin so the debugger can still read RTT).
+        #[cfg(not(feature = "semihosting-exit"))]
         loop {
             compiler_fence(Ordering::SeqCst);
         }

@@ -18,10 +18,18 @@ critical-section = "1.2.0"
 portable-atomic = { version = "1.13.1", default-features = false }
 
 defmt = { version = "1.0.1", optional = true }
+# Optional: exit the host debugger via semihosting after the panic is logged.
+semihosting = { version = "0.1.20", optional = true, default-features = false }
 
 [features]
 default = []
 defmt = ["dep:defmt"]
+## After logging the panic over RTT, call semihosting SYS_EXIT so QEMU /
+## probe-rs / openocd hosts terminate instead of spinning forever.
+##
+## Do **not** enable this on bare metal without a semihosting-capable debug
+## agent: an unhandled BKPT/SVC can hang or fault the target.
+semihosting-exit = ["dep:semihosting"]
 
 [package.metadata.docs.rs]
 features = ["defmt"]

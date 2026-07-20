@@ -44,3 +44,19 @@ You can enable the `defmt` feature so that panics are printed to the defmt chann
 and have configured both a print and a defmt channel, the panic message will be printed to both.
 The `defmt` feature doesn't automatically enable `rtt-target/defmt`. This allows you to use a
 different defmt backend if needed.
+
+# Semihosting exit
+
+By default the panic handler logs over RTT and then spins forever so a connected probe can still
+read the buffer.
+
+Enable `semihosting-exit` to call semihosting `SYS_EXIT` after the panic is written. This is
+useful under QEMU and other host debug agents that implement semihosting, so a panicking
+firmware run terminates instead of hanging:
+
+```toml
+panic-rtt-target = { version = "x.y.z", features = ["semihosting-exit"] }
+```
+
+Only enable this when a semihosting-capable debugger or emulator is attached. On bare metal
+without semihosting support, the trap can hang or fault the target.
